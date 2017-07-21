@@ -1,3 +1,6 @@
+#include <vector>
+#include "layer_quantities.h"
+#include "level_quantities.h"
 #include "thermodynamic.h"
 
 double saturation(double T, double p, double qv) {
@@ -11,8 +14,6 @@ double saturation_vapor(double T, double p) {
 
 bool will_nucleate(double r_dry, double S, double T) {
     auto S_crit = critical_saturation(r_dry, T);
-//    std::cout << "S_crit " << S_crit << std::endl;
-//    std::cout << "S " << S << std::endl;
     return S > S_crit;
 }
 
@@ -27,33 +28,21 @@ double critical_saturation(double r_dry, double T) {
                      raoults_parameter(r_dry));
 }
 
-//      def raoult_mixture_effect(r, r_ccn)
-//    : B = raoults_parameter(r_ccn) return (1 - B / r * *3)
-//
-//              def critical_radius(r_ccn, T = 273.15, math = np)
-//    : return math.sqrt(3. * raoults_parameter(r_ccn) / kelvins_parameter(T =
-//    T))
-//
-//          def critical_super_saturation(r_ccn, T = 273.15, math = np)
-//    : return math.sqrt(4. * kelvins_parameter(T = T) * *3 / 27. /
-//                       raoults_parameter(r_ccn))
-
-Tendencies condensation(double qc, double N, double r_dry, double S, double T, double E,
-                        double dt) {
+Tendencies condensation(double qc, double N, double r_dry, double S, double T,
+                        double E, double dt) {
     Tendencies tendencies{0, 0};
 
-    double r_old = radius(qc, N, r_dry);
+    //double r_old = std::max(r_dry, radius(qc, N, r_dry));
+    const double r_old = radius(qc, N, r_dry);
     double es = saturation_pressure(T);
-
     double r_new = condensation_solver(r_old, es, T, S, E, dt);
     r_new = std::max(r_new, r_dry);
 
     double dqc = cloud_water(N, r_new, r_old);
     double dT = H_LAT / C_P * dqc;
 
-    tendencies.dqc += dqc;
-    tendencies.dT += dT;
-
+    tendencies.dqc = dqc;
+    tendencies.dT = dT;
     return tendencies;
 }
 
@@ -88,4 +77,19 @@ double diffusional_growth(const double r_old, const double es, const double T,
         std::pow(H_LAT, 2) / (R_V * K * std::pow(T, 2)) + R_V * T / (D * es);
     auto c2 = H_LAT / (R_V * K * std::pow(T, 2));
     return (S / r_old + c2 * E) / (c1 * RHO_H2O);
+}
+
+double fall_speed(const double r){
+//    '''approximation found in rogers: Short Course in Cloud Physics p.126'''
+//    assert np.all(r >= 0)
+//    assert np.all(r < 2.e-3)
+    if (r > 2.e-3){std::cout << "large drops present, adjust droplet fall_speed function" << std::endl;}
+
+    double k1 = 1.19e8;
+    double k2 = 8e3;
+    double k3 = 2.01e2;
+
+    if( r < 40.e-6) {return k1 * std::pow(r, 2);}
+    if( r > 0.6e-3) {return k3 * std::sqrt(r);}
+    else {return k2 * r;}
 }

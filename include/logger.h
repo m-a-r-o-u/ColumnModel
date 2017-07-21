@@ -22,25 +22,26 @@ class StdoutLogger : public Logger {
         std::cout << std::endl;
         std::cout << "State at " << state.t << "\n";
         std::cout << "     layer         z         E         p         T       "
-                     " qv         S     (lvl)         w   (par) z        qc\n";
-        for (int i = 0; i < state.p.size(); ++i) {
+                     " qv         S   (par) z        qc         r     r_dry\n";
+        for (int i = 0; i < state.layers.size(); ++i) {
             std::cout << std::setprecision(3) << std::setw(10) << i;
             std::cout << std::setprecision(3) << std::setw(10)
                       << grid.getlay(i);
-            std::cout << std::setprecision(3) << std::setw(10) << state.E[i];
-            std::cout << std::setprecision(3) << std::setw(10) << state.p[i];
-            std::cout << std::setprecision(3) << std::setw(10) << state.T[i];
-            std::cout << std::setprecision(3) << std::setw(10) << state.qv[i];
+            std::cout << std::setprecision(3) << std::setw(10) << state.layers[i].E;
+            std::cout << std::setprecision(3) << std::setw(10) << state.layers[i].p;
+            std::cout << std::setprecision(3) << std::setw(10) << state.layers[i].T;
+            std::cout << std::setprecision(3) << std::setw(10) << state.layers[i].qv;
             std::cout << std::setprecision(3) << std::setw(10)
-                      << saturation(state.T[i], state.p[i], state.qv[i]);
-            std::cout << std::setprecision(3) << std::setw(10)
-                      << grid.getlvl(i);
-            std::cout << std::setprecision(3) << std::setw(10) << state.w[i];
+                      << saturation(state.layers[i].T, state.layers[i].p, state.layers[i].qv);
             if (i < superparticles.size()) {
                 std::cout << std::setprecision(3) << std::setw(10)
                           << superparticles[i].z;
                 std::cout << std::setprecision(3) << std::setw(10)
                           << superparticles[i].qc;
+                std::cout << std::setprecision(3) << std::setw(10)
+                          << radius(superparticles[i].qc, superparticles[i].N, superparticles[i].r_dry);
+                std::cout << std::setprecision(3) << std::setw(10)
+                          << superparticles[i].r_dry;
             }
             std::cout << "\n";
         }

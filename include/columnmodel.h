@@ -34,7 +34,7 @@ class ColumnModel {
     void insert_superparticles();
     void nucleation(Superparticle& superparticle);
     Tendencies calc_tendencies(const Superparticle& superparticle,
-                               const double w, const double S, const double T,
+                               const double S, const double T,
                                const double E, const double dt);
     std::shared_ptr<SuperParticleSource<OIt>> source;
     const Grid grid;
