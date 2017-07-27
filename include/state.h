@@ -9,6 +9,7 @@ struct State {
     double t;
     std::vector<Layer> layers;
     std::vector<Level> levels;
+
     inline const Layer& layer_at(double z, Grid grid) {
         int index = std::floor(z / grid.length);
         return layers[index];

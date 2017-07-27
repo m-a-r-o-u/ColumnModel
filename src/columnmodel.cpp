@@ -7,7 +7,6 @@
 #include "superparticle_population.h"
 #include "continuouse_state_view.h"
 #include "member_iterator.h"
-#include "fpda_rrtm_lw_cld.h"
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
     logger->log(state, superparticles.population, grid);
@@ -46,7 +45,6 @@ void ColumnModel::step() {
                        member_iterator(state.layers.end(), &Layer::qv),
                        member_iterator(state.levels.begin(), &Level::w),
                        grid.length, dt);
-
 }
 
 void ColumnModel::apply_tendencies_to_superparticle(
@@ -58,7 +56,8 @@ void ColumnModel::apply_tendencies_to_superparticle(
 void ColumnModel::apply_tendencies_to_state(Superparticle& superparticle,
                                             const Tendencies& tendencies) {
     state.change_layer(superparticle.z, grid,
-                       {tendencies.dT, 0, -tendencies.dqc, 0});
+                       //{tendencies.dT, 0, -tendencies.dqc, 0});
+                       {0, 0, -tendencies.dqc, 0});
 }
 
 Tendencies ColumnModel::calc_tendencies(const Superparticle& superparticle,
