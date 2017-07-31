@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5.1 FATAL_ERROR)
 project(ColumnModelTest CXX)
 
 # Download and unpack googletest at configure time

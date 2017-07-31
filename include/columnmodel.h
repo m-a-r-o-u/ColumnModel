@@ -5,22 +5,23 @@
 #include "superparticle.h"
 #include "superparticle_source.h"
 #include "logger.h"
-#include "superparticle_population.h"
 #include "grid.h"
+#include "radiationsolver.h"
 
 class ColumnModel {
    public:
     typedef std::back_insert_iterator<std::vector<Superparticle>> OIt;
     ColumnModel(const State& initial_state,
                 std::shared_ptr<SuperParticleSource<OIt>> source, double t_max,
-                double dt, double superparticle_dz, Grid grid)
-        : state(initial_state),
+                double dt, Grid grid, RadiationSolver radiation_solver)
+        :
           source(source),
-          t_max(t_max),
+          grid(grid),
+          state(initial_state),
+          superparticles{},
           dt(dt),
-          superparticles{{}, superparticle_dz},
-          grid(grid){
-          };
+          t_max(t_max),
+          radiation_solver(radiation_solver){};
     void run(std::shared_ptr<Logger> logger);
 
    private:
@@ -34,12 +35,13 @@ class ColumnModel {
     void insert_superparticles();
     void nucleation(Superparticle& superparticle);
     Tendencies calc_tendencies(const Superparticle& superparticle,
-                               const double S, const double T,
-                               const double E, const double dt);
+                               const double S, const double T, const double E,
+                               const double dt);
     std::shared_ptr<SuperParticleSource<OIt>> source;
     const Grid grid;
     State state;
-    Superparticles superparticles;
+    std::vector<Superparticle> superparticles;
     const double dt, t_max;
     int runs = 0;
+    RadiationSolver radiation_solver;
 };

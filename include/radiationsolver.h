@@ -1,14 +1,18 @@
 #pragma once
-#include <vector>
-#include <string>
+#include <algorithm>
+#include <cassert>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
-#include "readatm_utils.h"
+#include <string>
+#include <vector>
 #include "backgroundlevel.h"
-#include "state.h"
 #include "fpda_rrtm_lw_cld.h"
+#include "grid.h"
+#include "readatm_utils.h"
+#include "state.h"
+#include "superparticle.h"
 
 template <typename IIt, typename IIt2>
 std::vector<double> concatonate(IIt a_first, IIt a_last, IIt2 b_first,
@@ -18,6 +22,73 @@ std::vector<double> concatonate(IIt a_first, IIt a_last, IIt2 b_first,
     res.insert(res.end(), a_first, a_last);
     res.insert(res.end(), b_first, b_last);
     return res;
+}
+
+static inline void calculate_cloudproperties(
+    const std::vector<Superparticle>& superparticles, const Grid& grid,
+    std::vector<double>& cliqwp, std::vector<double>& reliq) {
+    std::vector<double> lvls = grid.getlvls();
+
+    std::vector<double> sp_count(grid.n_lay, 0);
+    std::vector<double> sp_count_nuc(grid.n_lay, 0);
+    std::vector<double> qc_sum(grid.n_lay, 0);
+    std::vector<double> r_2(grid.n_lay, 0);
+    std::vector<double> r_3(grid.n_lay, 0);
+    std::vector<double> r_eff(grid.n_lay, 0);
+
+    for (auto sp : superparticles) {
+        std::vector<double>::iterator ubound =
+            std::upper_bound(lvls.begin(), lvls.end(), sp.z);
+        assert(ubound != lvls.begin());
+
+        int index = std::distance(lvls.begin(), ubound) - 1;
+        assert(index >= 0 && index < grid.n_lay);
+        sp_count[index] += 1;
+        if (sp.is_nucleated) {
+            sp_count_nuc[index] += 1;
+            qc_sum[index] += sp.qc;
+            r_2[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 2);
+            r_3[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 3);
+        }
+    }
+
+    std::transform(r_3.begin(), r_3.end(), r_2.begin(), r_eff.begin(),
+                   std::divides<void>());
+
+    std::replace_if(r_eff.begin(), r_eff.end(),
+                    [](const double& a) { return std::isnan(a); }, 0);
+
+    std::transform(
+        r_eff.begin(), r_eff.end(), r_eff.begin(),
+        std::bind(std::multiplies<void>(), std::placeholders::_1, 1.e6));
+
+    std::transform(
+        qc_sum.begin(), qc_sum.end(), qc_sum.begin(),
+        std::bind(std::multiplies<void>(), std::placeholders::_1, 1.e3));
+
+    std::transform(r_eff.begin(), r_eff.end(), reliq.begin(), reliq.begin(),
+                   std::plus<void>());
+
+    std::transform(qc_sum.begin(), qc_sum.end(), cliqwp.begin(), cliqwp.begin(),
+                   std::plus<void>());
+
+    std::reverse(reliq.begin(), reliq.end());
+    std::reverse(cliqwp.begin(), cliqwp.end());
+
+    int width = 12;
+    std::cout << std::endl;
+    std::cout << std::setw(width) << "sp count";
+    std::cout << std::setw(width) << "nucleated";
+    std::cout << std::setw(width) << "qc";
+    std::cout << std::setw(width) << "reff";
+    std::cout << std::endl;
+    for (int i = 0; i < grid.n_lay - 1; ++i) {
+        std::cout << std::setw(width) << sp_count[i];
+        std::cout << std::setw(width) << sp_count_nuc[i];
+        std::cout << std::setw(width) << qc_sum.at(i);
+        std::cout << std::setw(width) << r_eff[i];
+        std::cout << std::endl;
+    }
 }
 
 struct RadiationSolver {
@@ -57,14 +128,14 @@ struct RadiationSolver {
         co2 = pairwise_mean(co2);
     }
 
-    void lw(State& state, Superparticles& superparticles) {
+    void lw(State& state, std::vector<Superparticle>& superparticles,
+            Grid grid) {
         if (first) {
             prepare_rad_solver_input(state);
             first = false;
             nlay = T_lay_app.size();
         }
 
-        //nlay = T.size();
         std::vector<double> ch4vmr(nlay, 0);
         std::vector<double> cfc11vmr(nlay, 0);
         std::vector<double> cfc12vmr(nlay, 0);
@@ -73,8 +144,11 @@ struct RadiationSolver {
 
         std::vector<double> cliqwp(nlay, 0);
         std::vector<double> reliq(nlay, 0);
-        //std::vector<double> cliqwp_dummy = calculate_cloudliquidwaterpath();
-        //std::vector<double> reliq(nlay, 0);
+        calculate_cloudproperties(superparticles, grid, cliqwp, reliq);
+        double re_min = 2.5;
+        std::replace_if(reliq.begin(), reliq.end(),
+                        [re_min](double a) { return (a > 0 && a < re_min); },
+                        re_min);
 
         std::vector<double> h2o_dummy(nlay, 0);
         std::vector<double> o3_dummy(nlay, 0);
@@ -93,6 +167,18 @@ struct RadiationSolver {
             ccl4vmr.data(), cliqwp.data(), reliq.data(), &uflx, &dflx, &hr);
 
         int width = 15;
+        std::cout << std::endl;
+        std::cout << std::setw(width) << "r_eff";
+        std::cout << std::setw(width) << "cliqwp";
+        std::cout << std::setw(width) << "p_lvl_app";
+        std::cout << std::endl;
+        for (int i = 0; i < nlay + 1; ++i) {
+            std::cout << std::setw(width) << reliq[i];
+            std::cout << std::setw(width) << cliqwp[i];
+            std::cout << std::setw(width) << p_lvl_app[i];
+            std::cout << std::endl;
+        }
+
         std::cout << std::endl;
         std::cout << std::setw(width) << "uflx" << std::setw(width) << "dflx"
                   << std::setw(width) << "hr" << std::endl;

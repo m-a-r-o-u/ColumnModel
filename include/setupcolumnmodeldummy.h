@@ -23,9 +23,9 @@ State createState(Grid grid, double w, double p0) {
 
     for (const auto& el : grid.getlays()) {
         state.layers.push_back(
-            {linear_temperature(el, 288), hydrostatic_pressure(el, p0), 0, 0});
+            {linear_temperature(el, 286), hydrostatic_pressure(el, p0), 0, 0});
     }
-    state.layers[0].qv = 0.010;
+    state.layers[0].qv = 0.011;
 
     for (const auto& el : grid.getlvls()) {
         state.levels.push_back({w, hydrostatic_pressure(el, p0)});
@@ -39,10 +39,9 @@ RadiationSolver createRadiationSolver() {
 }
 
 ColumnModel createColumnModel() {
-    //double t_max = 60*20;
-    double t_max = 60;
+    // double t_max = 60*20;
+    double t_max = 20 * 60;
     double dt = 0.1;
-    double dz = 50;
     double w = 1;
     double gridlength = 50.;
     double toa = w * t_max + (gridlength + gridlength / 5);
@@ -50,11 +49,10 @@ ColumnModel createColumnModel() {
     int N = w * dt * 20.;
     double p0 = 100000;
 
-    auto radsolver = createRadiationSolver();
+    auto radiation_solver = createRadiationSolver();
     auto state = createState(grid, w, p0);
-    radsolver.lw(state);
 
     return ColumnModel(state,
                        createParticleSource<ColumnModel::OIt>(grid.length, N),
-                       t_max, dt, dz, grid);
+                       t_max, dt, grid, radiation_solver);
 }

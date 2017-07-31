@@ -4,26 +4,23 @@
 #include "columnmodel.h"
 #include "thermodynamic.h"
 #include "logger.h"
-#include "superparticle_population.h"
 #include "continuouse_state_view.h"
 #include "member_iterator.h"
+#include <cstdlib>
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
-    logger->log(state, superparticles.population, grid);
+    logger->log(state, superparticles, grid);
     while (is_running()) {
         step();
-        logger->log(state, superparticles.population, grid);
+        logger->log(state, superparticles, grid);
     }
 }
 
 void ColumnModel::step() {
-    source->generateParticles(std::back_inserter(superparticles.population),
-                              dt);
-
+    source->generateParticles(std::back_inserter(superparticles), dt);
     State old_state(state);
-    // DummyContinuousStateView old_view(old_state, grid);
 
-    for (auto& superparticle : superparticles.population) {
+    for (auto& superparticle : superparticles) {
         Layer lay = old_state.layer_at(superparticle.z, grid);
         Level lvl = old_state.upper_level_at(superparticle.z, grid);
 
@@ -36,15 +33,16 @@ void ColumnModel::step() {
             apply_tendencies_to_superparticle(superparticle, tendencies, lvl.w);
             apply_tendencies_to_state(superparticle, tendencies);
         }
-        superparticle.z += lvl.w * dt +
-                           fall_speed(radius(superparticle.qc, superparticle.N,
-                                             superparticle.r_dry)) *
-                               dt;
+        superparticle.z +=
+            lvl.w * dt +
+            dt * fall_speed(radius(superparticle.qc, superparticle.N,
+                                   superparticle.r_dry));
     }
     advect_first_order(member_iterator(state.layers.begin(), &Layer::qv),
                        member_iterator(state.layers.end(), &Layer::qv),
                        member_iterator(state.levels.begin(), &Level::w),
                        grid.length, dt);
+    radiation_solver.lw(state, superparticles, grid);
 }
 
 void ColumnModel::apply_tendencies_to_superparticle(
@@ -80,7 +78,8 @@ void ColumnModel::nucleation(Superparticle& superparticle) {
 bool ColumnModel::is_running() {
     runs++;
     state.t = runs * dt;
-    if (state.t < t_max) {
+    // if (state.t < t_max) {
+    if (runs < 50 * 60) {
         return true;
     } else {
         return false;

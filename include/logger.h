@@ -23,7 +23,7 @@ class StdoutLogger : public Logger {
         std::cout << "State at " << state.t << "\n";
         std::cout << "     layer         z         E         p         T       "
                      " qv         S   (par) z        qc         r     r_dry\n";
-        for (int i = 0; i < state.layers.size(); ++i) {
+        for (unsigned int i = 0; i < state.layers.size(); ++i) {
             std::cout << std::setprecision(3) << std::setw(10) << i;
             std::cout << std::setprecision(3) << std::setw(10)
                       << grid.getlay(i);
