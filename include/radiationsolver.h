@@ -166,32 +166,44 @@ struct RadiationSolver {
             o2_dummy.data(), cfc11vmr.data(), cfc12vmr.data(), cfc22vmr.data(),
             ccl4vmr.data(), cliqwp.data(), reliq.data(), &uflx, &dflx, &hr);
 
-        int width = 15;
-        std::cout << std::endl;
-        std::cout << std::setw(width) << "r_eff";
-        std::cout << std::setw(width) << "cliqwp";
-        std::cout << std::setw(width) << "p_lvl_app";
-        std::cout << std::endl;
-        for (int i = 0; i < nlay + 1; ++i) {
-            std::cout << std::setw(width) << reliq[i];
-            std::cout << std::setw(width) << cliqwp[i];
-            std::cout << std::setw(width) << p_lvl_app[i];
-            std::cout << std::endl;
-        }
+        std::vector<double> Enet;
 
-        std::cout << std::endl;
-        std::cout << std::setw(width) << "uflx" << std::setw(width) << "dflx"
-                  << std::setw(width) << "hr" << std::endl;
-        for (int i = 0; i < nlay + 1; ++i) {
-            std::cout << std::setw(width) << uflx[0][i] << std::setw(width)
-                      << dflx[0][i];
-            if (i >= nlay) {
-                std::cout << std::setw(width) << "No Value";
-            } else {
-                std::cout << std::setw(width) << hr[0][i];
-            }
-            std::cout << std::endl;
+        for (unsigned int i = nlay - 1; i > (nlay - 1 - state.layers.size());
+             --i) {
+            Enet.push_back(hr[0][i] / (24. * 60. * 60.) * grid.length * C_P *
+                           RHO_AIR);
         }
+        std::copy(Enet.begin(), Enet.end(),
+                  member_iterator(state.layers.begin(), &Layer::E));
+
+        //        int width = 15;
+        //        std::cout << std::endl;
+        //        std::cout << std::setw(width) << "r_eff";
+        //        std::cout << std::setw(width) << "cliqwp";
+        //        std::cout << std::setw(width) << "p_lvl_app";
+        //        std::cout << std::endl;
+        //        for (int i = 0; i < nlay + 1; ++i) {
+        //            std::cout << std::setw(width) << reliq[i];
+        //            std::cout << std::setw(width) << cliqwp[i];
+        //            std::cout << std::setw(width) << p_lvl_app[i];
+        //            std::cout << std::endl;
+        //        }
+        //
+        //        std::cout << std::endl;
+        //        std::cout << std::setw(width) << "uflx" << std::setw(width) <<
+        //        "dflx"
+        //                  << std::setw(width) << "hr" << std::endl;
+        //        for (int i = 0; i < nlay + 1; ++i) {
+        //            std::cout << std::setw(width) << uflx[0][i] <<
+        //            std::setw(width)
+        //                      << dflx[0][i];
+        //            if (i >= nlay) {
+        //                std::cout << std::setw(width) << "No Value";
+        //            } else {
+        //                std::cout << std::setw(width) << hr[0][i];
+        //            }
+        //            std::cout << std::endl;
+        //        }
     }
 
     void prepare_rad_solver_input(State& state) {
@@ -213,7 +225,6 @@ struct RadiationSolver {
         std::transform(p_lvl_app.begin(), p_lvl_app.end(), p_lvl_app.begin(),
                        [](double a) { return a / 100; });
         std::reverse(p_lvl_app.begin(), p_lvl_app.end());
-        // append afglus temperature to model temperature
         std::vector<double> T_buf;
         std::reverse_copy(T.begin(), T.end(), std::back_inserter(T_buf));
         T_buf = pairwise_mean(T_buf);
