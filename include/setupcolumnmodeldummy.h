@@ -1,18 +1,18 @@
 #pragma once
 #include <random>
 #include "columnmodel.h"
-#include "setupstate.h"
+#include "fpda_rrtm_lw_cld.h"
 #include "grid.h"
-#include "state.h"
 #include "layer_quantities.h"
 #include "level_quantities.h"
 #include "radiationsolver.h"
-#include "fpda_rrtm_lw_cld.h"
+#include "setupstate.h"
+#include "state.h"
 
 template <typename OIt>
 std::unique_ptr<SuperParticleSource<OIt>> createParticleSource(double z_insert,
-                                                               int N) {
-    return mkSPSCH<OIt>(z_insert, N, 1.e+8,
+                                                               int N, int N_aer) {
+    return mkSPSCH<OIt>(z_insert, N, N_aer,
                         std::lognormal_distribution<double>(log(0.02e-6), 1.5),
                         std::mt19937_64());
 }
@@ -25,7 +25,12 @@ State createState(Grid grid, double w, double p0) {
         state.layers.push_back(
             {linear_temperature(el, 286), hydrostatic_pressure(el, p0), 0, 0});
     }
-    state.layers[0].qv = 0.011;
+
+    int index = std::floor(grid.z0/grid.length)-1;
+    state.layers[index].qv =
+        saturation_vapor(state.layers[index].T,
+                         state.layers[index].p);
+    state.layers[index].qv += 0.001;
 
     for (const auto& el : grid.getlvls()) {
         state.levels.push_back({w, hydrostatic_pressure(el, p0)});
@@ -39,20 +44,21 @@ RadiationSolver createRadiationSolver() {
 }
 
 ColumnModel createColumnModel() {
-    // double t_max = 60*20;
     double t_max = 20 * 60;
     double dt = 0.1;
     double w = 1;
-    double gridlength = 50.;
-    double toa = w * t_max + (gridlength + gridlength / 5);
-    Grid grid{toa, gridlength};
+    double gridlength = 100.;
+    double z0 = 1000;
+    double toa = z0 + w * t_max;
     int N = w * dt * 20.;
+    assert(N>=1);
+    int N_aer = .5e8 / (N* gridlength / dt / w);
     double p0 = 100000;
+    Grid grid{toa, gridlength, z0};
 
-    auto radiation_solver = createRadiationSolver();
     auto state = createState(grid, w, p0);
+    auto radiation_solver = createRadiationSolver();
 
-    return ColumnModel(state,
-                       createParticleSource<ColumnModel::OIt>(grid.length, N),
+    return ColumnModel(state, createParticleSource<ColumnModel::OIt>(z0, N, N_aer),
                        t_max, dt, grid, radiation_solver);
 }

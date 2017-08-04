@@ -5,6 +5,7 @@
 #include "superparticle.h"
 #include "grid.h"
 #include "thermodynamic.h"
+#include "analize_distribution.h"
 
 class Logger {
    public:
@@ -19,10 +20,16 @@ class StdoutLogger : public Logger {
     inline void log(const State& state,
                     const std::vector<Superparticle>& superparticles,
                     const Grid& grid) const override {
+        std::vector<double> qc_sum = calculate_qc_profile(superparticles, grid);
+        std::vector<double> r_mean = calculate_mean_radius_profile(superparticles, grid);
+        std::vector<double> r_max = calculate_maximal_radius_profile(superparticles, grid);
+        std::vector<double> sp_count = count_superparticles(superparticles, grid);
+        std::vector<double> sp_count_nuc = count_nucleated(superparticles, grid);
+
         std::cout << std::endl;
         std::cout << "State at " << state.t << "\n";
         std::cout << "     layer         z         E         p         T       "
-                     " qv         S   (par) z        qc         r     r_dry\n";
+                     " qv         S        qc    r_mean     r_max     N_tot     N_nuc\n";
         for (unsigned int i = 0; i < state.layers.size(); ++i) {
             std::cout << std::setprecision(3) << std::setw(10) << i;
             std::cout << std::setprecision(3) << std::setw(10)
@@ -33,18 +40,14 @@ class StdoutLogger : public Logger {
             std::cout << std::setprecision(3) << std::setw(10) << state.layers[i].qv;
             std::cout << std::setprecision(3) << std::setw(10)
                       << saturation(state.layers[i].T, state.layers[i].p, state.layers[i].qv);
-            if (i < superparticles.size()) {
-                std::cout << std::setprecision(3) << std::setw(10)
-                          << superparticles[i].z;
-                std::cout << std::setprecision(3) << std::setw(10)
-                          << superparticles[i].qc;
-                std::cout << std::setprecision(3) << std::setw(10)
-                          << radius(superparticles[i].qc, superparticles[i].N, superparticles[i].r_dry);
-                std::cout << std::setprecision(3) << std::setw(10)
-                          << superparticles[i].r_dry;
-            }
+            std::cout << std::setprecision(3) << std::setw(10) << qc_sum[i];
+            std::cout << std::setprecision(3) << std::setw(10) << r_mean[i];
+            std::cout << std::setprecision(3) << std::setw(10) << r_max[i];
+            std::cout << std::setprecision(3) << std::setw(10) << sp_count[i];
+            std::cout << std::setprecision(3) << std::setw(10) << sp_count_nuc[i];
             std::cout << "\n";
         }
+        std::cout << std::endl;
     }
     inline void finalize() const override {}
 };

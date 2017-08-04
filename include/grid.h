@@ -1,10 +1,12 @@
 #pragma once
+#include <stdexcept>
 #include <cmath>
 #include <vector>
 
 struct Grid {
     const double height;
     const double length;
+    const double z0;
     const int n_lay = std::ceil(height / length);
     const int n_lvl = n_lay + 1;
 

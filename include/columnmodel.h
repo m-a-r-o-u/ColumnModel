@@ -25,6 +25,7 @@ class ColumnModel {
     void run(std::shared_ptr<Logger> logger);
 
    private:
+    void log_every_seconds(std::shared_ptr<Logger> logger, double dt_out);
     void step();
     bool is_running();
     void apply_tendencies_to_superparticle(Superparticle& superparticle,
@@ -41,7 +42,8 @@ class ColumnModel {
     const Grid grid;
     State state;
     std::vector<Superparticle> superparticles;
-    const double dt, t_max;
+    const double dt;
+    const double t_max;
     int runs = 0;
     RadiationSolver radiation_solver;
 };
