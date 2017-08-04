@@ -86,7 +86,6 @@ bool ColumnModel::is_running() {
     runs++;
     state.t = runs * dt;
     if (state.t < t_max) {
-    //if (runs < 50 * 60) {
         return true;
     } else {
         return false;

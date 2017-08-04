@@ -32,49 +32,22 @@ static inline void calculate_cloudproperties(
 
     std::vector<double> lvls = grid.getlvls();
 
-    std::vector<double> qc_sum(grid.n_lay, 0);
-    std::vector<double> r_2(grid.n_lay, 0);
-    std::vector<double> r_3(grid.n_lay, 0);
-    std::vector<double> r_eff(grid.n_lay, 0);
-
-    for (auto sp : superparticles) {
-        std::vector<double>::iterator ubound =
-            std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-        assert(ubound != lvls.begin());
-
-        int index = std::distance(lvls.begin(), ubound) - 1;
-        assert(index >= 0);
-        assert(index < grid.n_lay);
-        if (sp.is_nucleated) {
-            qc_sum[index] += sp.qc;
-            r_2[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 2);
-            r_3[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 3);
-        }
-    }
-
-    std::transform(r_3.begin(), r_3.end(), r_2.begin(), r_eff.begin(),
-                   std::divides<void>());
-
-    std::replace_if(r_eff.begin(), r_eff.end(),
-                    [](const double& a) { return std::isnan(a); }, 0);
-
-    std::transform(
-        r_eff.begin(), r_eff.end(), r_eff.begin(),
-        std::bind(std::multiplies<void>(), std::placeholders::_1, 1.e6));
+    std::vector<double> qc_sum = calculate_qc_profile(superparticles, grid);
+    std::vector<double> r_eff = calculate_effective_radius_profile(superparticles, grid);
 
     std::transform(
         qc_sum.begin(), qc_sum.end(), qc_sum.begin(),
-        std::bind(std::multiplies<void>(), std::placeholders::_1, 1.e3));
-
-    std::transform(r_eff.begin(), r_eff.end(), reliq.begin(), reliq.begin(),
-                   std::plus<void>());
+        std::bind(std::multiplies<void>(), std::placeholders::_1, 1.e3 * grid.length));
 
     std::transform(qc_sum.begin(), qc_sum.end(), cliqwp.begin(), cliqwp.begin(),
                    std::plus<void>());
 
     std::transform(
-        cliqwp.begin(), cliqwp.end(), cliqwp.begin(),
-        std::bind(std::multiplies<void>(), std::placeholders::_1, 50.));
+        r_eff.begin(), r_eff.end(), r_eff.begin(),
+        std::bind(std::multiplies<void>(), std::placeholders::_1, 1.e6));
+
+    std::transform(r_eff.begin(), r_eff.end(), reliq.begin(), reliq.begin(),
+                   std::plus<void>());
 
     std::reverse(reliq.begin(), reliq.end());
     std::reverse(cliqwp.begin(), cliqwp.end());

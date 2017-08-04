@@ -1,7 +1,6 @@
 #pragma once
 #include <random>
 #include "columnmodel.h"
-#include "fpda_rrtm_lw_cld.h"
 #include "grid.h"
 #include "layer_quantities.h"
 #include "level_quantities.h"
