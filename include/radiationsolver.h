@@ -117,7 +117,9 @@ struct RadiationSolver {
 
         std::vector<double> cliqwp(nlay, 0);
         std::vector<double> reliq(nlay, 0);
+
         calculate_cloudproperties(superparticles, grid, cliqwp, reliq);
+
         double re_min = 2.5;
         double re_max = 60.;
         std::replace_if(reliq.begin(), reliq.end(),
@@ -127,20 +129,20 @@ struct RadiationSolver {
                         [re_max](double a) { return (a > re_max); },
                         re_max);
 
-        std::vector<double> h2o_dummy(nlay, 0);
-        std::vector<double> o3_dummy(nlay, 0);
-        std::vector<double> o2_dummy(nlay, 0);
-        std::vector<double> co2_dummy(nlay, 0);
-        std::vector<double> no2_dummy(nlay, 0);
+        std::vector<double> h2o(nlay, 0);
+        std::vector<double> o3(nlay, 0);
+        std::vector<double> o2(nlay, 0);
+        std::vector<double> co2(nlay, 0);
+        std::vector<double> no2(nlay, 0);
 
         double** uflx;
         double** dflx;
         double** hr;
 
         cfpda_rrtm_lw_cld(
-            1, nlay, p_lvl_app.data(), T_lay_app.data(), h2o_dummy.data(),
-            o3_dummy.data(), co2_dummy.data(), ch4vmr.data(), no2_dummy.data(),
-            o2_dummy.data(), cfc11vmr.data(), cfc12vmr.data(), cfc22vmr.data(),
+            1, nlay, p_lvl_app.data(), T_lay_app.data(), h2o.data(),
+            o3.data(), co2.data(), ch4vmr.data(), no2.data(),
+            o2.data(), cfc11vmr.data(), cfc12vmr.data(), cfc22vmr.data(),
             ccl4vmr.data(), cliqwp.data(), reliq.data(), &uflx, &dflx, &hr);
 
         std::vector<double> Enet;
