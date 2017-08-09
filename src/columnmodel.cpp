@@ -49,7 +49,7 @@ void ColumnModel::step() {
                        member_iterator(state.layers.end(), &Layer::qv),
                        member_iterator(cloud_bottom_lev, &Level::w),
                        grid.length, dt);
-    radiation_solver.lw(state, superparticles, grid);
+    radiation_solver.calculate_radiation(lw, sw, state, superparticles, grid);
 }
 
 void ColumnModel::apply_tendencies_to_superparticle(

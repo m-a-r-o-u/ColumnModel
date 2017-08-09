@@ -54,10 +54,12 @@ ColumnModel createColumnModel() {
     int N_aer = .5e8 / (N* gridlength / dt / w);
     double p0 = 100000;
     Grid grid{toa, gridlength, z0};
+    bool lw = true;
+    bool sw = true;
 
     auto state = createState(grid, w, p0);
     auto radiation_solver = createRadiationSolver();
 
     return ColumnModel(state, createParticleSource<ColumnModel::OIt>(z0, N, N_aer),
-                       t_max, dt, grid, radiation_solver);
+                       t_max, dt, grid, radiation_solver, lw, sw);
 }
