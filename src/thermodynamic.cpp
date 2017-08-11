@@ -1,7 +1,7 @@
+#include "thermodynamic.h"
 #include <vector>
 #include "layer_quantities.h"
 #include "level_quantities.h"
-#include "thermodynamic.h"
 
 double saturation(double T, double p, double qv) {
     return qv / saturation_vapor(T, p) - 1;
@@ -79,17 +79,26 @@ double diffusional_growth(const double r_old, const double es, const double T,
     return (S / r_old + c2 * E) / (c1 * RHO_H2O);
 }
 
-double fall_speed(const double r){
-//    '''approximation found in rogers: Short Course in Cloud Physics p.126'''
-//    assert np.all(r >= 0)
-//    assert np.all(r < 2.e-3)
-    if (r > 2.e-3){std::cout << "large drops present, adjust droplet fall_speed function" << std::endl;}
+double fall_speed(const double r) {
+    //    '''approximation found in rogers: Short Course in Cloud Physics
+    //    p.126'''
+    //    assert np.all(r >= 0)
+    //    assert np.all(r < 2.e-3)
+    if (r > 2.e-3) {
+        std::cout << "large drops present, adjust droplet fall_speed function"
+                  << std::endl;
+    }
 
     double k1 = 1.19e8;
     double k2 = 8e3;
     double k3 = 2.01e2;
 
-    if( r < 40.e-6) {return k1 * std::pow(r, 2);}
-    if( r > 0.6e-3) {return k3 * std::sqrt(r);}
-    else {return k2 * r;}
+    if (r < 40.e-6) {
+        return k1 * std::pow(r, 2);
+    }
+    if (r > 0.6e-3) {
+        return k3 * std::sqrt(r);
+    } else {
+        return k2 * r;
+    }
 }

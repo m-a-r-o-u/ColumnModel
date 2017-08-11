@@ -7,11 +7,12 @@
 #include "radiationsolver.h"
 #include "setupstate.h"
 #include "state.h"
+#include "twomey.h"
 
 template <typename OIt>
 std::unique_ptr<SuperParticleSource<OIt>> createParticleSource(double z_insert,
-                                                               int N, int N_aer) {
-    return mkSPSCH<OIt>(z_insert, N, N_aer,
+                                                               int N, int N_multi) {
+    return mkSPSCH<OIt>(z_insert, N, N_multi,
                         std::lognormal_distribution<double>(log(0.02e-6), 1.5),
                         std::mt19937_64());
 }
@@ -51,7 +52,7 @@ ColumnModel createColumnModel() {
     double toa = z0 + w * t_max;
     int N = w * dt * 20.;
     assert(N>=1);
-    int N_aer = .5e8 / (N* gridlength / dt / w);
+    int N_multi = .5e8 / (N* gridlength / dt / w);
     double p0 = 100000;
     Grid grid{toa, gridlength, z0};
     bool lw = true;
@@ -60,6 +61,10 @@ ColumnModel createColumnModel() {
     auto state = createState(grid, w, p0);
     auto radiation_solver = createRadiationSolver();
 
-    return ColumnModel(state, createParticleSource<ColumnModel::OIt>(z0, N, N_aer),
+    Twomey twomey(10, N_multi);
+    std::vector<Superparticle> dummy;
+    twomey.generateParticles(state, grid, dummy);
+
+    return ColumnModel(state, createParticleSource<ColumnModel::OIt>(z0, N, N_multi),
                        t_max, dt, grid, radiation_solver, lw, sw);
 }

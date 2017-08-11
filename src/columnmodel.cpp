@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "member_iterator.h"
 #include "thermodynamic.h"
+#include "twomey.h"
 
 void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
                                     double dt_out) {
