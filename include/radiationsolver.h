@@ -109,8 +109,8 @@ struct RadiationSolver {
     }
 
     void calculate_radiation(bool lw, bool sw, State& state,
-                             const std::vector<Superparticle>& superparticles,
-                             const Grid& grid) {
+                             const std::vector<Superparticle>& superparticles
+                             ) {
         if (lw || sw) {
             if (first) {
                 prepare_rad_solver_input(state);
@@ -139,7 +139,7 @@ struct RadiationSolver {
             double** hrlw;
             double** hrsw;
 
-            calculate_cloudproperties(superparticles, grid, cliqwp, reliq);
+            calculate_cloudproperties(superparticles, state.grid, cliqwp, reliq);
 
             if (lw) {
                 cfpda_rrtm_lw_cld(
@@ -163,87 +163,87 @@ struct RadiationSolver {
             std::vector<double> Enet;
             for (unsigned int i = nlay - 1;
                  i > (nlay - 1 - state.layers.size()); --i) {
-                Enet.push_back(-hr[i] / (24. * 60. * 60.) * grid.length * C_P *
-                               RHO_AIR * 10.);
+                Enet.push_back(-hr[i] / (24. * 60. * 60.) * state.grid.length * C_P *
+                               RHO_AIR);
             }
             std::copy(Enet.begin(), Enet.end(),
                       member_iterator(state.layers.begin(), &Layer::E));
         }
     }
 
-    void lw(State& state, std::vector<Superparticle>& superparticles,
-            Grid grid) {
-        if (first) {
-            prepare_rad_solver_input(state);
-            first = false;
-            nlay = T_lay_app.size();
-        }
-
-        std::vector<double> ch4vmr(nlay, 0);
-        std::vector<double> cfc11vmr(nlay, 0);
-        std::vector<double> cfc12vmr(nlay, 0);
-        std::vector<double> cfc22vmr(nlay, 0);
-        std::vector<double> ccl4vmr(nlay, 0);
-        std::vector<double> h2o(nlay, 0);
-        std::vector<double> o3(nlay, 0);
-        std::vector<double> o2(nlay, 0);
-        std::vector<double> co2(nlay, 0);
-        std::vector<double> no2(nlay, 0);
-
-        std::vector<double> cliqwp(nlay, 0);
-        std::vector<double> reliq(nlay, 0);
-
-        calculate_cloudproperties(superparticles, grid, cliqwp, reliq);
-
-        double** uflx;
-        double** dflx;
-        double** hr;
-
-        cfpda_rrtm_lw_cld(1, nlay, p_lvl_app.data(), T_lay_app.data(),
-                          h2o.data(), o3.data(), co2.data(), ch4vmr.data(),
-                          no2.data(), o2.data(), cfc11vmr.data(),
-                          cfc12vmr.data(), cfc22vmr.data(), ccl4vmr.data(),
-                          cliqwp.data(), reliq.data(), &uflx, &dflx, &hr);
-
-        std::vector<double> Enet;
-
-        for (unsigned int i = nlay - 1; i > (nlay - 1 - state.layers.size());
-             --i) {
-            Enet.push_back(-hr[0][i] / (24. * 60. * 60.) * grid.length * C_P *
-                           RHO_AIR);
-        }
-        std::copy(Enet.begin(), Enet.end(),
-                  member_iterator(state.layers.begin(), &Layer::E));
-
-        //        int width = 15;
-        //        std::cout << std::endl;
-        //        std::cout << std::setw(width) << "r_eff";
-        //        std::cout << std::setw(width) << "cliqwp";
-        //        std::cout << std::setw(width) << "p_lvl_app";
-        //        std::cout << std::endl;
-        //        for (int i = 0; i < nlay + 1; ++i) {
-        //            std::cout << std::setw(width) << reliq[i];
-        //            std::cout << std::setw(width) << cliqwp[i];
-        //            std::cout << std::setw(width) << p_lvl_app[i];
-        //            std::cout << std::endl;
-        //        }
-        //
-        //        std::cout << std::endl;
-        //        std::cout << std::setw(width) << "uflx" << std::setw(width) <<
-        //        "dflx"
-        //                  << std::setw(width) << "hr" << std::endl;
-        //        for (int i = 0; i < nlay + 1; ++i) {
-        //            std::cout << std::setw(width) << uflx[0][i] <<
-        //            std::setw(width)
-        //                      << dflx[0][i];
-        //            if (i >= nlay) {
-        //                std::cout << std::setw(width) << "No Value";
-        //            } else {
-        //                std::cout << std::setw(width) << hr[0][i];
-        //            }
-        //            std::cout << std::endl;
-        //        }
-    }
+//    void lw(State& state, std::vector<Superparticle>& superparticles,
+//            Grid grid) {
+//        if (first) {
+//            prepare_rad_solver_input(state);
+//            first = false;
+//            nlay = T_lay_app.size();
+//        }
+//
+//        std::vector<double> ch4vmr(nlay, 0);
+//        std::vector<double> cfc11vmr(nlay, 0);
+//        std::vector<double> cfc12vmr(nlay, 0);
+//        std::vector<double> cfc22vmr(nlay, 0);
+//        std::vector<double> ccl4vmr(nlay, 0);
+//        std::vector<double> h2o(nlay, 0);
+//        std::vector<double> o3(nlay, 0);
+//        std::vector<double> o2(nlay, 0);
+//        std::vector<double> co2(nlay, 0);
+//        std::vector<double> no2(nlay, 0);
+//
+//        std::vector<double> cliqwp(nlay, 0);
+//        std::vector<double> reliq(nlay, 0);
+//
+//        calculate_cloudproperties(superparticles, grid, cliqwp, reliq);
+//
+//        double** uflx;
+//        double** dflx;
+//        double** hr;
+//
+//        cfpda_rrtm_lw_cld(1, nlay, p_lvl_app.data(), T_lay_app.data(),
+//                          h2o.data(), o3.data(), co2.data(), ch4vmr.data(),
+//                          no2.data(), o2.data(), cfc11vmr.data(),
+//                          cfc12vmr.data(), cfc22vmr.data(), ccl4vmr.data(),
+//                          cliqwp.data(), reliq.data(), &uflx, &dflx, &hr);
+//
+//        std::vector<double> Enet;
+//
+//        for (unsigned int i = nlay - 1; i > (nlay - 1 - state.layers.size());
+//             --i) {
+//            Enet.push_back(-hr[0][i] / (24. * 60. * 60.) * grid.length * C_P *
+//                           RHO_AIR);
+//        }
+//        std::copy(Enet.begin(), Enet.end(),
+//                  member_iterator(state.layers.begin(), &Layer::E));
+//
+//        //        int width = 15;
+//        //        std::cout << std::endl;
+//        //        std::cout << std::setw(width) << "r_eff";
+//        //        std::cout << std::setw(width) << "cliqwp";
+//        //        std::cout << std::setw(width) << "p_lvl_app";
+//        //        std::cout << std::endl;
+//        //        for (int i = 0; i < nlay + 1; ++i) {
+//        //            std::cout << std::setw(width) << reliq[i];
+//        //            std::cout << std::setw(width) << cliqwp[i];
+//        //            std::cout << std::setw(width) << p_lvl_app[i];
+//        //            std::cout << std::endl;
+//        //        }
+//        //
+//        //        std::cout << std::endl;
+//        //        std::cout << std::setw(width) << "uflx" << std::setw(width) <<
+//        //        "dflx"
+//        //                  << std::setw(width) << "hr" << std::endl;
+//        //        for (int i = 0; i < nlay + 1; ++i) {
+//        //            std::cout << std::setw(width) << uflx[0][i] <<
+//        //            std::setw(width)
+//        //                      << dflx[0][i];
+//        //            if (i >= nlay) {
+//        //                std::cout << std::setw(width) << "No Value";
+//        //            } else {
+//        //                std::cout << std::setw(width) << hr[0][i];
+//        //            }
+//        //            std::cout << std::endl;
+//        //        }
+//    }
 
     void prepare_rad_solver_input(State& state) {
         // append afglus pressure to model pressure

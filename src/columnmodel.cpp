@@ -8,29 +8,70 @@
 #include "member_iterator.h"
 #include "thermodynamic.h"
 #include "twomey.h"
+#include "analize_sp.h"
+
+void check_state(State& state) {
+    for (auto l : state.layers) {
+        if (l.qv < 0) {
+            std::cout << "qv is smaller then zero: " << std::endl;
+            std::copy(member_iterator(state.layers.begin(), &Layer::qv),
+                      member_iterator(state.layers.end(), &Layer::qv),
+                      std::ostream_iterator<double>(std::cout, "\n"));
+            std::exit(0);
+        }
+    }
+}
+
+void check_superparticles(std::vector<Superparticle>& sp) {
+    for (auto s : sp) {
+        if (s.N > sp[0].N || s.N < sp[0].N) {
+            std::exit(0);
+        }
+    }
+}
 
 void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
                                     double dt_out) {
     if (!std::abs(std::remainder(runs * dt, dt_out))) {
-        logger->log(state, superparticles, grid);
+        logger->log(state, superparticles, state.grid, N_sp);
     }
 }
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
-    logger->log(state, superparticles, grid);
+    logger->log(state, superparticles, state.grid, N_sp);
     while (is_running()) {
         step();
-        log_every_seconds(logger, 60.);
+        log_every_seconds(logger, 3.);
     }
 }
 
+void advect_from_cloudbase(State& state, const double& dt) {
+    auto cloud_bottom_lay = state.layers.begin() +
+                            std::floor(state.grid.z0 / state.grid.length) - 1;
+    auto cloud_bottom_lev = state.levels.begin() +
+                            std::floor(state.grid.z0 / state.grid.length) - 1;
+    advect_first_order(member_iterator(cloud_bottom_lay, &Layer::qv),
+                       member_iterator(state.layers.end(), &Layer::qv),
+                       member_iterator(cloud_bottom_lev, &Level::w),
+                       state.grid.length, dt);
+}
+
 void ColumnModel::step() {
-    source->generateParticles(std::back_inserter(superparticles), dt);
+    source->generateParticles(std::back_inserter(superparticles), state, dt,
+                              superparticles);
+
     State old_state(state);
 
+    if (true) {
+        check_state(state);
+        check_superparticles(superparticles);
+    }
+
+    advect_from_cloudbase(state, dt);
+
     for (auto& sp : superparticles) {
-        Layer lay = old_state.layer_at(sp.z, grid);
-        Level lvl = old_state.upper_level_at(sp.z, grid);
+        Layer lay = old_state.layer_at(sp.z);
+        Level lvl = old_state.upper_level_at(sp.z);
 
         double S = saturation(lay.T, lay.p, lay.qv);
 
@@ -38,19 +79,13 @@ void ColumnModel::step() {
             auto tendencies = calc_tendencies(sp, S, lay.T, lay.E, dt);
             apply_tendencies_to_superparticle(sp, tendencies, lvl.w);
             apply_tendencies_to_state(sp, tendencies);
+            sp.z += lvl.w * dt - dt * fall_speed(radius(sp.qc, sp.N, sp.r_dry));
         }
-        sp.z += lvl.w * dt - dt * fall_speed(radius(sp.qc, sp.N, sp.r_dry));
     }
 
-    auto cloud_bottom_lay =
-        state.layers.begin() + std::floor(grid.z0 / grid.length) - 1;
-    auto cloud_bottom_lev =
-        state.levels.begin() + std::floor(grid.z0 / grid.length) - 1;
-    advect_first_order(member_iterator(cloud_bottom_lay, &Layer::qv),
-                       member_iterator(state.layers.end(), &Layer::qv),
-                       member_iterator(cloud_bottom_lev, &Level::w),
-                       grid.length, dt);
-    radiation_solver.calculate_radiation(lw, sw, state, superparticles, grid);
+    radiation_solver.calculate_radiation(lw, sw, state, superparticles);
+
+    removeUnnucleated(superparticles);
 }
 
 void ColumnModel::apply_tendencies_to_superparticle(
@@ -61,9 +96,7 @@ void ColumnModel::apply_tendencies_to_superparticle(
 
 void ColumnModel::apply_tendencies_to_state(Superparticle& superparticle,
                                             const Tendencies& tendencies) {
-    state.change_layer(superparticle.z, grid,
-                       //{tendencies.dT, 0, -tendencies.dqc, 0});
-                       {0, 0, -tendencies.dqc, 0});
+    state.change_layer(superparticle.z, state.grid, {0, 0, -tendencies.dqc, 0});
 }
 
 Tendencies ColumnModel::calc_tendencies(const Superparticle& superparticle,
@@ -75,8 +108,9 @@ Tendencies ColumnModel::calc_tendencies(const Superparticle& superparticle,
 }
 
 void ColumnModel::nucleation(Superparticle& superparticle) {
+    // feedback qc to qv?
     auto r = radius(superparticle.qc, superparticle.N, superparticle.r_dry);
-    if ((r - superparticle.r_dry) / superparticle.r_dry < 1.e-5) {
+    if (std::abs((r - superparticle.r_dry) / superparticle.r_dry) < 1.e-5) {
         superparticle.is_nucleated = false;
     } else {
         superparticle.is_nucleated = true;

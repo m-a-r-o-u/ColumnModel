@@ -13,17 +13,17 @@ class ColumnModel {
     typedef std::back_insert_iterator<std::vector<Superparticle>> OIt;
     ColumnModel(const State& initial_state,
                 std::shared_ptr<SuperParticleSource<OIt>> source, double t_max,
-                double dt, Grid grid, RadiationSolver radiation_solver, bool sw,
-                bool lw)
+                double dt, RadiationSolver radiation_solver, bool sw,
+                bool lw, const int& N_sp )
         : source(source),
-          grid(grid),
           state(initial_state),
           superparticles{},
           dt(dt),
           t_max(t_max),
           radiation_solver(radiation_solver),
           lw(lw),
-          sw(sw)
+          sw(sw),
+          N_sp(N_sp)
           {};
     void run(std::shared_ptr<Logger> logger);
 
@@ -42,7 +42,6 @@ class ColumnModel {
                                const double S, const double T, const double E,
                                const double dt);
     std::shared_ptr<SuperParticleSource<OIt>> source;
-    const Grid grid;
     State state;
     std::vector<Superparticle> superparticles;
     const double dt;
@@ -51,4 +50,5 @@ class ColumnModel {
     RadiationSolver radiation_solver;
     bool lw;
     bool sw;
+    int N_sp;
 };

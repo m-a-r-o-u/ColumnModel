@@ -1,9 +1,10 @@
 #pragma once
-#include <stdexcept>
 #include <cmath>
+#include <stdexcept>
 #include <vector>
 
 struct Grid {
+    Grid(double h, double l, double z) : height(h), length(l), z0(z){}
     const double height;
     const double length;
     const double z0;

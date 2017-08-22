@@ -5,7 +5,8 @@ template <typename OutputIterator>
 class SuperParticleSource {
    public:
     virtual ~SuperParticleSource() {}
-    virtual void generateParticles(OutputIterator it, double dt) = 0;
+    virtual void generateParticles(OutputIterator it, State& state, double dt,
+                                   const std::vector<Superparticle>& sp) = 0;
 };
 
 template <typename D, typename G, typename OutputIterator>
@@ -15,7 +16,8 @@ class SuperParticleSourceConstHeight
     SuperParticleSourceConstHeight(double z_insert, double rate, int N, D d,
                                    G g)
         : z_insert(z_insert), rate(rate), N(N), d(d), g(g){};
-    void generateParticles(OutputIterator it, double dt) override {
+    void generateParticles(OutputIterator it, State& state,
+                           double dt, const std::vector<Superparticle>& sp) override {
         for (int i = 0; i < dt * rate; ++i) {
             *it = Superparticle{0, z_insert, d(g), N, false};
             ++it;

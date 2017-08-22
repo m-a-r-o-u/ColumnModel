@@ -85,8 +85,9 @@ double fall_speed(const double r) {
     //    assert np.all(r >= 0)
     //    assert np.all(r < 2.e-3)
     if (r > 2.e-3) {
-        std::cout << "large drops present, adjust droplet fall_speed function"
-                  << std::endl;
+        std::cout
+            << "large drops present, adjust droplet fall_speed function, r="
+            << r << std::endl;
     }
 
     double k1 = 1.19e8;

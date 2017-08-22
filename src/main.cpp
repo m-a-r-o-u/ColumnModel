@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 //    try {
 //        const YAML::Node config = YAML::LoadFile(argv[1]);
         auto columnmodel = createColumnModel();
-        std::shared_ptr<Logger> logger = createLogger();
+        std::shared_ptr<Logger> logger = createLogger("ascii");
         columnmodel.run(logger);
 //    }
 //    catch (YAML::Exception e) {
