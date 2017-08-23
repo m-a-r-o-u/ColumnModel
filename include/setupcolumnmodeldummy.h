@@ -43,19 +43,19 @@ State createState(Grid grid, double w, double p0) {
     return state;
 }
 
-RadiationSolver createRadiationSolver() {
+RadiationSolver createRadiationSolver(bool sw, bool lw) {
     return RadiationSolver(
-        "/home/m/Mares.Barekzai/phd/projects/column_model/data/afglus.dat");
+        "/home/m/Mares.Barekzai/phd/projects/column_model/data/afglus.dat", sw, lw);
 }
 
 ColumnModel createColumnModel() {
-    double t_max = 30 * 60;
+    double t_max = 3 * 60;
     double dt = 0.1;
     double w = 1;
     double gridlength = 100.;
     double z0 = 1000;
     double toa = z0 + w * t_max + gridlength*5;
-    int N = 1.e6;
+    int N = 1.e3;
     assert(N >= 1);
     int N_multi = 1.e8 / double(N);
     double p0 = 100000;
@@ -64,9 +64,8 @@ ColumnModel createColumnModel() {
     bool lw = false;
     bool sw = false;
 
-    std::cout << grid.n_lay << std::endl;
     auto state = createState(grid, w, p0);
-    auto radiation_solver = createRadiationSolver();
+    auto radiation_solver = createRadiationSolver(sw, lw);
 
     return ColumnModel(
         state, createParticleSource<ColumnModel::OIt> (z0, N, N_multi, grid.n_lay),

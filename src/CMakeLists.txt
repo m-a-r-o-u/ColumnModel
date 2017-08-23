@@ -4,11 +4,14 @@ include_directories(${YAML_CPP_INCLUDE_DIR})
 find_package(fpda_rrtm)
 include_directories(${FPDA_RRTM_INCLUDE_DIR})
 
+find_package(netCDF REQUIRED)
+include_directories(${NETCDF_INCLUDE_DIR})
+
 add_library(columnmodel 
             thermodynamic.cpp
             columnmodel.cpp)
 
-target_link_libraries(columnmodel ${FPDA_RRTM_LIBRARY})
+target_link_libraries(columnmodel ${FPDA_RRTM_LIBRARY} ${NETCDF_LIBRARIES} netcdf_c++4)
 
 target_include_directories(columnmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 

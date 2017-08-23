@@ -62,7 +62,7 @@ inline std::vector<int> index_profile(const std::vector<double>& S_prf,
     return N_prf;
 }
 
-inline void feedback_qc(const std::vector<Superparticle>& nuc_par, Layer& lay) {
+inline void feedback_qc(std::vector<Superparticle>& nuc_par, Layer& lay) {
     double qc_sum =
         std::accumulate(member_iterator(nuc_par.begin(),&Superparticle::qc),
                         member_iterator(nuc_par.end(),  &Superparticle::qc), 0);

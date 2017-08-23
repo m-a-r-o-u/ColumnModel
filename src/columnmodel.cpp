@@ -33,15 +33,16 @@ void check_superparticles(std::vector<Superparticle>& sp) {
 void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
                                     double dt_out) {
     if (!std::abs(std::remainder(runs * dt, dt_out))) {
-        logger->log(state, superparticles, state.grid, N_sp);
+        logger->log(state, superparticles,N_sp);
     }
 }
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
-    logger->log(state, superparticles, state.grid, N_sp);
+    logger->initialize(state.grid);
+    logger->log(state, superparticles, N_sp);
     while (is_running()) {
         step();
-        log_every_seconds(logger, 3.);
+        log_every_seconds(logger, 60.);
     }
 }
 
@@ -83,7 +84,7 @@ void ColumnModel::step() {
         }
     }
 
-    radiation_solver.calculate_radiation(lw, sw, state, superparticles);
+    radiation_solver.calculate_radiation(state, superparticles);
 
     removeUnnucleated(superparticles);
 }
@@ -121,6 +122,7 @@ bool ColumnModel::is_running() {
     runs++;
     state.t = runs * dt;
     if (state.t < t_max) {
+        // if (runs < 12) {
         return true;
     } else {
         return false;
