@@ -33,28 +33,22 @@ void check_superparticles(std::vector<Superparticle>& sp) {
 void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
                                     double dt_out) {
     if (!std::abs(std::remainder(runs * dt, dt_out))) {
-        logger->log(state, superparticles,N_sp);
+        logger->log(state, superparticles);
     }
 }
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
     logger->initialize(state.grid);
-    logger->log(state, superparticles, N_sp);
+    radiation_solver.init(*logger);
+    source->init(*logger);
+    //state.init(grid);
+    //grid.init(*logger);
+
+    logger->log(state, superparticles);
     while (is_running()) {
         step();
         log_every_seconds(logger, 60.);
     }
-}
-
-void advect_from_cloudbase(State& state, const double& dt) {
-    auto cloud_bottom_lay = state.layers.begin() +
-                            std::floor(state.grid.z0 / state.grid.length) - 1;
-    auto cloud_bottom_lev = state.levels.begin() +
-                            std::floor(state.grid.z0 / state.grid.length) - 1;
-    advect_first_order(member_iterator(cloud_bottom_lay, &Layer::qv),
-                       member_iterator(state.layers.end(), &Layer::qv),
-                       member_iterator(cloud_bottom_lev, &Level::w),
-                       state.grid.length, dt);
 }
 
 void ColumnModel::step() {
@@ -68,7 +62,7 @@ void ColumnModel::step() {
         check_superparticles(superparticles);
     }
 
-    advect_from_cloudbase(state, dt);
+    advection_solver->advect(state, dt);
 
     for (auto& sp : superparticles) {
         Layer lay = old_state.layer_at(sp.z);

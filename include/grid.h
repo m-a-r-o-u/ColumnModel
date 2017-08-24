@@ -4,10 +4,16 @@
 #include <vector>
 
 struct Grid {
-    Grid(double h, double l, double z) : height(h), length(l), z0(z){}
+    Grid(double h, double l) : height(h), length(l){
+        for (int i = 0; i < n_lay; ++i) {
+            lays.push_back((i + 0.5) * length);
+        }
+        for (int i = 0; i < n_lvl; ++i) {
+            lvls.push_back(i * length);
+        }
+    }
     const double height;
     const double length;
-    const double z0;
     const int n_lay = std::ceil(height / length);
     const int n_lvl = n_lay + 1;
 
@@ -28,18 +34,13 @@ struct Grid {
                 "the lay index is larger then the number of layers");
         }
     }
-    std::vector<double> getlays() const {
-        std::vector<double> z;
-        for (int i = 0; i < n_lay; ++i) {
-            z.push_back((i + 0.5) * length);
-        }
-        return z;
+    const std::vector<double>& getlays() const {
+        return lays;
     }
-    std::vector<double> getlvls() const {
-        std::vector<double> z;
-        for (int i = 0; i < n_lvl; ++i) {
-            z.push_back(i * length);
-        }
-        return z;
+    const std::vector<double>& getlvls() const {
+        return lvls;
     }
+    private:
+    std::vector<double> lays;
+    std::vector<double> lvls;
 };

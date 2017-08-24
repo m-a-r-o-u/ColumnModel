@@ -96,6 +96,11 @@ struct RadiationSolver {
         co2 = pairwise_mean(co2);
     }
 
+    void init(Logger& logger){
+        logger.setAttr("sw", sw);
+        logger.setAttr("lw", lw);
+    }
+
     void calculate_radiation(State& state,
                              const std::vector<Superparticle>& superparticles
                              ) {

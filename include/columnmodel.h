@@ -7,23 +7,25 @@
 #include "superparticle.h"
 #include "superparticle_source.h"
 #include "tendencies.h"
+#include "advect.h"
 
 class ColumnModel {
    public:
     typedef std::back_insert_iterator<std::vector<Superparticle>> OIt;
     ColumnModel(const State& initial_state,
                 std::shared_ptr<SuperParticleSource<OIt>> source, double t_max,
-                double dt, RadiationSolver radiation_solver, bool sw,
-                bool lw, const int& N_sp )
+                double dt, RadiationSolver radiation_solver,
+                std::unique_ptr<Grid> grid,
+                std::unique_ptr<Advect> advection_solver
+            )
         : source(source),
           state(initial_state),
           superparticles{},
           dt(dt),
           t_max(t_max),
           radiation_solver(radiation_solver),
-          lw(lw),
-          sw(sw),
-          N_sp(N_sp)
+          grid(std::move(grid)),
+          advection_solver(std::move(advection_solver))
           {};
     void run(std::shared_ptr<Logger> logger);
 
@@ -48,7 +50,6 @@ class ColumnModel {
     const double t_max;
     int runs = 0;
     RadiationSolver radiation_solver;
-    bool lw;
-    bool sw;
-    int N_sp;
+    std::unique_ptr<Grid> grid;
+    std::unique_ptr<Advect> advection_solver;
 };

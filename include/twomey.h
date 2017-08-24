@@ -83,9 +83,9 @@ inline void append_par(const std::vector<Superparticle>& nuc_par, OIt sp_itr) {
 template <typename OIt>
 class Twomey : public SuperParticleSource<OIt> {
    public:
-    Twomey(int N_sp, int N_multi, int N_lay)
+    Twomey(int N_sp, int N_lay)
         : g(N_sp),
-          N_multi(N_multi),
+          N_multi(1.e8 / double(N_sp)),
           N_sp(N_sp),
           N_pro_cmp(N_lay, 0),
           S_tab(N_sp, 0.) {
@@ -94,7 +94,12 @@ class Twomey : public SuperParticleSource<OIt> {
                        [](double x) { return std::max(x, 8.* 1.e-3);});
     };
 
-    inline void generateParticles(OIt sp_itr, State& state, double dt,
+    void init(Logger& logger){
+        logger.setAttr("N_sp", N_sp);
+        logger.setAttr("N_multi", N_multi);
+    }
+
+    void generateParticles(OIt sp_itr, State& state, double dt,
                                   const std::vector<Superparticle>& sp) {
         std::vector<double> S_state = supersaturation_profile(state);
         std::vector<int> n_nuc = count_nucleated(sp, state.grid);
@@ -145,7 +150,7 @@ class Twomey : public SuperParticleSource<OIt> {
 };
 
 template <typename OIt>
-std::unique_ptr<Twomey<OIt>> mkTwomey(const int& N_sp, const int& N_multi,
+std::unique_ptr<Twomey<OIt>> mkTwomey(const int& N_sp,
                                       const int& N_lay) {
-    return std::make_unique<Twomey<OIt>>(N_sp, N_multi, N_lay);
+    return std::make_unique<Twomey<OIt>>(N_sp, N_lay);
 }

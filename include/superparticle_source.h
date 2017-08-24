@@ -1,10 +1,12 @@
 #pragma once
 #include "superparticle.h"
+#include "logger.h"
 
 template <typename OutputIterator>
 class SuperParticleSource {
    public:
     virtual ~SuperParticleSource() {}
+    virtual void init(Logger& logger){}
     virtual void generateParticles(OutputIterator it, State& state, double dt,
                                    const std::vector<Superparticle>& sp) = 0;
 };
