@@ -38,11 +38,9 @@ void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
 }
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
-    logger->initialize(state.grid);
+    logger->initialize(state.grid, dt);
     radiation_solver.init(*logger);
     source->init(*logger);
-    //state.init(grid);
-    //grid.init(*logger);
 
     logger->log(state, superparticles);
     while (is_running()) {

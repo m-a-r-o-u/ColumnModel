@@ -14,11 +14,10 @@
 #include "thermodynamic.h"
 #include "analize_sp.h"
 #include "analize_state.h"
-#include "time_stamp.h"
 
 class Logger {
    public:
-    virtual void initialize(const Grid& grid){} 
+    virtual void initialize(const Grid& grid, const double& dt){} 
     virtual void setAttr(const std::string& key, bool val){}
     virtual void setAttr(const std::string& key, int val){}
     virtual void setAttr(const std::string& key, double val){}
@@ -66,13 +65,16 @@ class StdoutLogger : public Logger {
 
 class NetCDFLogger: public Logger {
     public:
-    NetCDFLogger() {
+    NetCDFLogger(std::string file_name="dummy.nc"): file(file_name) {
         mkdir(folder.c_str(), S_IRWXU);
-        file = time_stamp() + ".nc" ;
         fh = std::make_unique<netCDF::NcFile>(folder+file, netCDF::NcFile::replace);
     }
-    virtual void initialize(const Grid& grid){
+    virtual void initialize(const Grid& grid, const double& dt){
         n_lay = grid.n_lay;
+
+        this->setAttr("dz", grid.length);
+        this->setAttr("dt", dt);
+
         netCDF::NcDim layer_dim = fh->addDim("layer", n_lay);
         netCDF::NcVar layer_var = fh->addVar("layer", netCDF::ncDouble, layer_dim);
         auto layers = grid.getlays();
@@ -124,7 +126,7 @@ class NetCDFLogger: public Logger {
         r_std_var.putVar({i,0}, {1, n_lay}, r_std.data());
 
 
-        std::cout << "time [s]: " << state.t << std::endl;
+        std::cout << "time [min]: " << std::floor(state.t/60.) << std::endl;
         ++i;
     }
 
@@ -151,9 +153,11 @@ class NetCDFLogger: public Logger {
 
 class NetcdfLogger : public Logger {};
 
-inline std::unique_ptr<Logger> createLogger(std::string logger) {
+inline std::unique_ptr<Logger> createLogger(std::string logger, std::string file_name) {
     if(logger == "std") {return std::make_unique<StdoutLogger>();}
-    if(logger == "netcdf") {return std::make_unique<NetCDFLogger>();}
+    if(logger == "netcdf") {
+        return std::make_unique<NetCDFLogger>(file_name);
+    }
     else {
         return std::make_unique<StdoutLogger>();//sollte eigentlich nicht gehen oder einen std logger aufrufen
     }
