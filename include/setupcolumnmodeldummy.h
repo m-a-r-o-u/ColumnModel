@@ -45,9 +45,9 @@ RadiationSolver createRadiationSolver(bool sw, bool lw) {
         lw);
 }
 
-std::unique_ptr<Advect> createAdvectionSolver(const double& cloud_base ){
+std::unique_ptr<Advect> createAdvectionSolver(const double& cloud_base, const double& w_init){
     if(true) {
-        return mkFirstOrder(cloud_base);
+        return mkFirstOrder(cloud_base, w_init);
     }
 }
 
@@ -65,7 +65,7 @@ ColumnModel createColumnModel() {
     bool lw = false;
     bool sw = false;
 
-    auto advection_solver = createAdvectionSolver(cloud_base);
+    auto advection_solver = createAdvectionSolver(cloud_base, w);
     auto state = createState(*grid, w, p0, cloud_base);
     auto radiation_solver = createRadiationSolver(sw, lw);
     auto source =

@@ -41,6 +41,7 @@ void ColumnModel::run(std::shared_ptr<Logger> logger) {
     logger->initialize(state.grid, dt);
     radiation_solver.init(*logger);
     source->init(*logger);
+    advection_solver->init(*logger);
 
     logger->log(state, superparticles);
     while (is_running()) {
