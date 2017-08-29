@@ -1,100 +1,82 @@
 #pragma once
-#include "yaml-cpp/yaml.h"
+#include <yaml-cpp/yaml.h>
+#include <memory>
 #include <random>
-#include <string>
-#include <vector>
+#include "advect.h"
 #include "columnmodel.h"
-#include <stdexcept>
-#include "linearfield.h"
-#include "constants.h"
-
-void throw_if_config_argument_invalid(const YAML::Node& config, std::string s) {
-    if (!config[s]) {
-        throw std::invalid_argument(s + " does not specify a YAML::Node");
-    }
-}
+#include "grid.h"
+#include "layer_quantities.h"
+#include "level_quantities.h"
+#include "radiationsolver.h"
+#include "setupstate.h"
+#include "state.h"
+#include "twomey.h"
 
 template <typename OIt>
 std::unique_ptr<SuperParticleSource<OIt>> createParticleSource(
-    const YAML::Node& config) {
-    return mkSPSCH<OIt>(500, 1, 1.e+8,
-                        std::lognormal_distribution<double>(log(0.02e-6), 1.5),
-                        std::mt19937_64());
+    const Grid& grid, const YAML::Node& config) {
+
+    int N_sp = config["N_sp"].as<int>();
+    int N_lay = grid.n_lay;
+    return mkTwomey<OIt>(N_sp, N_lay);
 }
 
-std::vector<double> exponential_qv(std::vector<double> z, double qv0,
-                                   double zc) {
-    std::vector<double> qv;
-    for (auto el : z) {
-        qv.push_back(qv0 * std::exp(-el / zc));
+//std::function<State(const Grid&)> createState(const YAML::Node& config) {
+//    return [](const Grid& grid) { return State(...); }
+//}
+
+State createState(const Grid& grid, const YAML::Node& config) {
+    double T0 = config["T0"].as<double>();
+    double p0 = config["p0"].as<double>();
+    double cloud_base = config["cloud_base"].as<double>();
+    double w = config["w"].as<double>();
+
+    State state{0, {}, {}, grid, cloud_base, w};
+
+    for (const auto& el : grid.getlays()) {
+        state.layers.push_back(
+            {linear_temperature(el, T0), hydrostatic_pressure(el, p0), 0, 0});
     }
-    return qv;
-}
 
-std::vector<double> linear_temperature(const std::vector<double>& z,
-                                       double T0) {
-    std::vector<double> T;
-    for (auto el : z) {
-        T.push_back(T0 - LAPSE_RATE_A * el);
+    int index = std::floor(cloud_base / grid.length) - 1;
+    state.layers[index].qv =
+        saturation_vapor(state.layers[index].T, state.layers[index].p);
+
+    for (const auto& el : grid.getlvls()) {
+        state.levels.push_back({w, hydrostatic_pressure(el, p0)});
     }
-    return T;
-}
-std::vector<double> hydrostatic_pressure(const std::vector<double>& z,
-                                         double p0) {
-    std::vector<double> p;
-    for (auto el : z) {
-        p.push_back(p0 - G * el);
-    }
-    return p;
+    return state;
 }
 
-std::vector<double> create_z(double dz, double n) {
-    std::vector<double> z;
-    for (int i = 0; i < n; ++i) {
-        z.push_back(i * dz);
-    }
-    return z;
+RadiationSolver createRadiationSolver(const YAML::Node& config) {
+    bool sw = config["sw"].as<bool>();
+    bool lw = config["lw"].as<bool>();
+    std::string data_path = config["data_path"].as<std::string>();
+    return RadiationSolver(data_path, sw, lw);
 }
 
-State createState(const YAML::Node& config) {
-    throw_if_config_argument_invalid(config, "initial_conditions");
-    const YAML::Node initial_conditions = config["initial_conditions"];
-    throw_if_config_argument_invalid(initial_conditions, "initial_state");
-    const YAML::Node initial_state = initial_conditions["initial_state"];
-    throw_if_config_argument_invalid(initial_state, "w");
-    const YAML::Node w = initial_state["w"];
-    const double wind_max = w["max"].as<double>();
-    const double total_height = initial_conditions["total_height"].as<double>();
-    const double grid_length = initial_conditions["grid_length"].as<double>();
-    size_t grid_points = std::ceil(total_height / grid_length);
+std::unique_ptr<Advect> createAdvectionSolver(const YAML::Node& config) {
+    return mkFirstOrder();
+}
 
-    const YAML::Node p = initial_state["p"];
-    const double p0 = p["p0"].as<double>();
-
-    const YAML::Node E = initial_state["E"];
-    const double E0 = E["E0"].as<double>();
-
-    const YAML::Node qv = initial_state["qv"];
-    const double qv0 = qv["qv0"].as<double>();
-    const double zc = qv["zc"].as<double>();
-
-    std::vector<double> z = create_z(grid_length, grid_points);
-
-    std::vector<double> pressure_values(hydrostatic_pressure(z, p0));
-    std::vector<double> wind_values(grid_points, wind_max);
-    std::vector<double> radiation_values(grid_points, E0);
-    std::vector<double> T_values(linear_temperature(z, T0));
-    std::vector<double> qv_values(exponential_qv(z, qv0, zc));
-
-    return {{wind_values, grid_length},
-            {pressure_values, grid_length},
-            {T_values, grid_length},
-            {radiation_values, grid_length},
-            {qv_values, grid_length}};
+std::unique_ptr<Grid> createGrid(const YAML::Node& config) {
+    double toa = config["toa"].as<double>();
+    double gridlength = config["gridlength"].as<double>();
+    return std::make_unique<Grid>(toa, gridlength);
 }
 
 ColumnModel createColumnModel(const YAML::Node& config) {
-    return ColumnModel(createState(config["initial_conditions"]),
-                       createParticleSource<ColumnModel::OIt>(config), 2, 1,
-                       50);
+    double t_max = config["t_max"].as<double>();
+    double dt = config["dt"].as<double>();
+
+    auto grid = createGrid(config["grid"]);
+
+    auto advection_solver = createAdvectionSolver(config["advection"]);
+    auto state = createState(*grid, config["initial_state"]);
+    auto radiation_solver = createRadiationSolver(config["radiation"]);
+    auto source = createParticleSource<ColumnModel::OIt>(
+        *grid, config["particle_source"]);
+
+    return ColumnModel(state, std::move(source), t_max, dt, radiation_solver,
+                       std::move(grid), std::move(advection_solver));
 }

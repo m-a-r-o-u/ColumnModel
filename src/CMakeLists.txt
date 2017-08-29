@@ -11,7 +11,7 @@ add_library(columnmodel
             thermodynamic.cpp
             columnmodel.cpp)
 
-target_link_libraries(columnmodel ${FPDA_RRTM_LIBRARY} ${NETCDF_LIBRARIES} netcdf_c++4)
+        target_link_libraries(columnmodel ${YAML_CPP_LIBRARIES} ${FPDA_RRTM_LIBRARIES} ${NETCDF_LIBRARIES} netcdf_c++4)
 
 target_include_directories(columnmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 

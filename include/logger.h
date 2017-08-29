@@ -1,4 +1,5 @@
 #pragma once
+#include <yaml-cpp/yaml.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <iomanip>
@@ -14,10 +15,11 @@
 #include "thermodynamic.h"
 #include "analize_sp.h"
 #include "analize_state.h"
+#include "time_stamp.h"
 
 class Logger {
    public:
-    virtual void initialize(const Grid& grid, const double& dt){} 
+    virtual void initialize(const State& grid, const double& dt){} 
     virtual void setAttr(const std::string& key, bool val){}
     virtual void setAttr(const std::string& key, int val){}
     virtual void setAttr(const std::string& key, double val){}
@@ -65,19 +67,20 @@ class StdoutLogger : public Logger {
 
 class NetCDFLogger: public Logger {
     public:
-    NetCDFLogger(std::string file_name="dummy.nc"): file(file_name) {
+    NetCDFLogger(std::string folder_name, std::string file_name="dummy.nc"): folder(folder_name), file(file_name) {
         mkdir(folder.c_str(), S_IRWXU);
         fh = std::make_unique<netCDF::NcFile>(folder+file, netCDF::NcFile::replace);
     }
-    virtual void initialize(const Grid& grid, const double& dt){
-        n_lay = grid.n_lay;
+    virtual void initialize(const State& state, const double& dt){
+        n_lay = state.grid.n_lay;
 
-        this->setAttr("dz", grid.length);
+        this->setAttr("dz", state.grid.length);
         this->setAttr("dt", dt);
+        this->setAttr("w_init", state.w_init);
 
         netCDF::NcDim layer_dim = fh->addDim("layer", n_lay);
         netCDF::NcVar layer_var = fh->addVar("layer", netCDF::ncDouble, layer_dim);
-        auto layers = grid.getlays();
+        auto layers = state.grid.getlays();
         layer_var.putVar({0}, {n_lay}, layers.data());
 
         time_dim = fh->addDim("time");
@@ -146,19 +149,28 @@ class NetCDFLogger: public Logger {
     netCDF::NcVar r_std_var;
     size_t i;
     size_t n_lay;
-    std::string folder = "./data/";
+    std::string folder;
     std::string file;
     std::unique_ptr<netCDF::NcFile> fh;
 };
 
-class NetcdfLogger : public Logger {};
-
 inline std::unique_ptr<Logger> createLogger(std::string logger, std::string file_name) {
-    if(logger == "std") {return std::make_unique<StdoutLogger>();}
     if(logger == "netcdf") {
         return std::make_unique<NetCDFLogger>(file_name);
     }
-    else {
-        return std::make_unique<StdoutLogger>();//sollte eigentlich nicht gehen oder einen std logger aufrufen
+    else {return std::make_unique<StdoutLogger>();}
+}
+
+inline std::unique_ptr<Logger> createLogger(const YAML::Node& config){
+    std::string logger = config["type"].as<std::string>();
+    std::string file_name = config["file_name"].as<std::string>();
+    std::string dir_name = config["dir_name"].as<std::string>();
+
+    if (file_name == "time_stamp") { file_name = time_stamp();}
+
+    if(logger == "netcdf") {
+        return std::make_unique<NetCDFLogger>(dir_name, file_name);
     }
+
+    else {return std::make_unique<StdoutLogger>();}
 }

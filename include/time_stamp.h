@@ -10,6 +10,6 @@ inline std::string time_stamp(){
     std::time (&rawtime);
     timeinfo = std::localtime(&rawtime);
     
-    std::strftime(buffer, sizeof(buffer),"%Y-%m-%d_%I:%M:%S", timeinfo);
+    std::strftime(buffer, sizeof(buffer),"%Y-%m-%d_%H:%M:%S", timeinfo);
     return {buffer};
 }
