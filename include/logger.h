@@ -69,7 +69,23 @@ class NetCDFLogger: public Logger {
     public:
     NetCDFLogger(std::string folder_name, std::string file_name="dummy.nc"): folder(folder_name), file(file_name) {
         mkdir(folder.c_str(), S_IRWXU);
-        fh = std::make_unique<netCDF::NcFile>(folder+file, netCDF::NcFile::replace);
+        std::string fullname = folder+file;
+        int fcounter = 0;
+
+        bool fswitch = true;
+        while(fswitch){
+            try{
+                std::ostringstream ss;
+                ss << std::setfill('0') << std::setw(3) << fcounter;
+                fh = std::make_unique<netCDF::NcFile>(fullname + '_' + ss.str() + ".nc", netCDF::NcFile::newFile);
+                fswitch=false;
+            }
+            catch(const netCDF::exceptions::NcException& e){
+                std::cout << "renaming file" << std::endl;
+                ++fcounter;
+            }
+        }
+
     }
     virtual void initialize(const State& state, const double& dt){
         n_lay = state.grid.n_lay;
@@ -165,8 +181,8 @@ inline std::unique_ptr<Logger> createLogger(const YAML::Node& config){
     std::string logger = config["type"].as<std::string>();
     std::string file_name = config["file_name"].as<std::string>();
     std::string dir_name = config["dir_name"].as<std::string>();
-
-    if (file_name == "time_stamp") { file_name = time_stamp();}
+    std::cout << file_name << std::endl;
+    if (file_name == "time_stamp") { file_name = time_stamp(); std::cout << file_name << std::endl;}
 
     if(logger == "netcdf") {
         return std::make_unique<NetCDFLogger>(dir_name, file_name);

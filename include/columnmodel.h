@@ -8,6 +8,7 @@
 #include "superparticle_source.h"
 #include "tendencies.h"
 #include "advect.h"
+#include "saturation_fluctuations.h"
 
 class ColumnModel {
    public:
@@ -16,7 +17,8 @@ class ColumnModel {
                 std::shared_ptr<SuperParticleSource<OIt>> source, double t_max,
                 double dt, RadiationSolver radiation_solver,
                 std::unique_ptr<Grid> grid,
-                std::unique_ptr<Advect> advection_solver
+                std::unique_ptr<Advect> advection_solver,
+                std::unique_ptr<FluctuationSolver> fluctuations
             )
         : source(source),
           state(initial_state),
@@ -25,7 +27,8 @@ class ColumnModel {
           t_max(t_max),
           radiation_solver(radiation_solver),
           grid(std::move(grid)),
-          advection_solver(std::move(advection_solver))
+          advection_solver(std::move(advection_solver)),
+          fluctuations(std::move(fluctuations))
           {};
     void run(std::shared_ptr<Logger> logger);
 
@@ -52,4 +55,5 @@ class ColumnModel {
     RadiationSolver radiation_solver;
     std::unique_ptr<Grid> grid;
     std::unique_ptr<Advect> advection_solver;
+    std::unique_ptr<FluctuationSolver> fluctuations;
 };

@@ -9,6 +9,7 @@
 #include "thermodynamic.h"
 #include "twomey.h"
 #include "analize_sp.h"
+#include "saturation_fluctuations.h"
 
 void check_state(State& state) {
     for (auto l : state.layers) {
@@ -30,13 +31,6 @@ void check_superparticles(std::vector<Superparticle>& sp) {
     }
 }
 
-void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
-                                    double dt_out) {
-    if (!std::abs(std::remainder(runs * dt, dt_out))) {
-        logger->log(state, superparticles);
-    }
-}
-
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
     logger->initialize(state, dt);
     radiation_solver.init(*logger);
@@ -53,6 +47,7 @@ void ColumnModel::run(std::shared_ptr<Logger> logger) {
 void ColumnModel::step() {
     source->generateParticles(std::back_inserter(superparticles), state, dt,
                               superparticles);
+    fluctuations->refresh(superparticles);
 
     State old_state(state);
 
@@ -67,7 +62,7 @@ void ColumnModel::step() {
         Layer lay = old_state.layer_at(sp.z);
         Level lvl = old_state.upper_level_at(sp.z);
 
-        double S = saturation(lay.T, lay.p, lay.qv);
+        double S = saturation(lay.T, lay.p, lay.qv) + fluctuations->getFluctuation(sp, dt);
 
         if (sp.is_nucleated || will_nucleate(sp.r_dry, S, lay.T)) {
             auto tendencies = calc_tendencies(sp, S, lay.T, lay.E, dt);
@@ -81,6 +76,14 @@ void ColumnModel::step() {
 
     removeUnnucleated(superparticles);
 }
+
+void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
+                                    double dt_out) {
+    if (!std::abs(std::remainder(runs * dt, dt_out))) {
+        logger->log(state, superparticles);
+    }
+}
+
 
 void ColumnModel::apply_tendencies_to_superparticle(
     Superparticle& superparticle, Tendencies& tendencies, const double w) {
@@ -102,7 +105,6 @@ Tendencies ColumnModel::calc_tendencies(const Superparticle& superparticle,
 }
 
 void ColumnModel::nucleation(Superparticle& superparticle) {
-    // feedback qc to qv?
     auto r = radius(superparticle.qc, superparticle.N, superparticle.r_dry);
     if (std::abs((r - superparticle.r_dry) / superparticle.r_dry) < 1.e-5) {
         superparticle.is_nucleated = false;

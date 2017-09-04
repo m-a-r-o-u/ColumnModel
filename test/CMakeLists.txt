@@ -40,6 +40,8 @@ add_executable(run_test
                test_thermodynamics.cpp
                test_vectorlinearfield.cpp
                test_analize_distribution.cpp
+               test_saturation_fluctuations.cpp
+               test_tau_relax.cpp
                test_state.cpp)
 target_link_libraries(run_test 
                       gtest_main 

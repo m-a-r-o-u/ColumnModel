@@ -8,22 +8,18 @@
 #include "layer_quantities.h"
 #include "level_quantities.h"
 #include "radiationsolver.h"
+#include "saturation_fluctuations.h"
 #include "setupstate.h"
 #include "state.h"
 #include "twomey.h"
 
-template <typename OIt>
+template <typename OIt, typename G>
 std::unique_ptr<SuperParticleSource<OIt>> createParticleSource(
-    const Grid& grid, const YAML::Node& config) {
-
+    G& gen, const Grid& grid, const YAML::Node& config) {
     int N_sp = config["N_sp"].as<int>();
     int N_lay = grid.n_lay;
-    return mkTwomey<OIt>(N_sp, N_lay);
+    return mkTwomey<OIt>(gen, N_sp, N_lay);
 }
-
-//std::function<State(const Grid&)> createState(const YAML::Node& config) {
-//    return [](const Grid& grid) { return State(...); }
-//}
 
 State createState(const Grid& grid, const YAML::Node& config) {
     double T0 = config["T0"].as<double>();
@@ -65,7 +61,16 @@ std::unique_ptr<Grid> createGrid(const YAML::Node& config) {
     return std::make_unique<Grid>(toa, gridlength);
 }
 
-ColumnModel createColumnModel(const YAML::Node& config) {
+template <typename G>
+std::unique_ptr<FluctuationSolver> createFluctuationSolver( G& gen,
+    const Grid& grid, const YAML::Node& config) {
+    std::string type = config["type"].as<std::string>();
+    double epsilon = config["epsilon"].as<double>();
+    return mkFS(gen, type, epsilon, grid);
+}
+
+template <typename G>
+ColumnModel createColumnModel(G& gen, const YAML::Node& config) {
     double t_max = config["t_max"].as<double>();
     double dt = config["dt"].as<double>();
 
@@ -74,9 +79,11 @@ ColumnModel createColumnModel(const YAML::Node& config) {
     auto advection_solver = createAdvectionSolver(config["advection"]);
     auto state = createState(*grid, config["initial_state"]);
     auto radiation_solver = createRadiationSolver(config["radiation"]);
-    auto source = createParticleSource<ColumnModel::OIt>(
+    auto source = createParticleSource<ColumnModel::OIt>( gen,
         *grid, config["particle_source"]);
+    auto fluctuations = createFluctuationSolver(gen, *grid, config["fluctuations"]);
 
     return ColumnModel(state, std::move(source), t_max, dt, radiation_solver,
-                       std::move(grid), std::move(advection_solver));
+                       std::move(grid), std::move(advection_solver),
+                       std::move(fluctuations));
 }

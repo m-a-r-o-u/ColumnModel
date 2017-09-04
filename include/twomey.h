@@ -42,9 +42,8 @@ int find_index(IT first, IT last, double value) {
     return std::distance(first, std::lower_bound(first, last, value));
 }
 
-inline double place_vertically(State& state, int index) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
+template <typename G>
+inline double place_vertically(G& gen, State& state, int index) {
     std::uniform_real_distribution<> dis(-1, 1);
     double z = state.grid.getlay(index) + dis(gen) * state.grid.length / 2.;
     if (!(z > state.grid.getlvl(index) && z < state.grid.getlvl(index + 1))) {
@@ -80,15 +79,17 @@ inline void append_par(const std::vector<Superparticle>& nuc_par, OIt sp_itr) {
     }
 }
 
-template <typename OIt>
+template <typename OIt, typename G>
 class Twomey : public SuperParticleSource<OIt> {
    public:
-    Twomey(int N_sp, int N_lay)
+    Twomey(G& gen, int N_sp, int N_lay)
         : g(N_sp),
           N_multi(1.e8 / double(N_sp)),
           N_sp(N_sp),
           N_pro_cmp(N_lay, 0),
-          S_tab(N_sp, 0.) {
+          S_tab(N_sp, 0.),
+          gen(gen)
+    {
         S_tab = createNSTable_logistic(N_sp);
         std::transform(S_tab.begin(), S_tab.end(), S_tab.begin(),
                        [](double x) { return std::max(x, 8.* 1.e-3);});
@@ -133,7 +134,7 @@ class Twomey : public SuperParticleSource<OIt> {
                 int N = N_multi;
                 bool is_nucleated = true;
                 double qc = cloud_water(N, r_init, r_dry, 1.);
-                double z = place_vertically(state, index);
+                double z = place_vertically(gen, state, index);
                 res.push_back({qc, z, r_dry, N, is_nucleated});
             }
             return res;
@@ -147,10 +148,11 @@ class Twomey : public SuperParticleSource<OIt> {
     const int N_sp;
     std::vector<int> N_pro_cmp;
     std::vector<double> S_tab;
+    G& gen;
 };
 
-template <typename OIt>
-std::unique_ptr<Twomey<OIt>> mkTwomey(const int& N_sp,
+template <typename OIt, typename G>
+std::unique_ptr<Twomey<OIt, G>> mkTwomey(G& gen, const int& N_sp,
                                       const int& N_lay) {
-    return std::make_unique<Twomey<OIt>>(N_sp, N_lay);
+    return std::make_unique<Twomey<OIt, G>>(gen, N_sp, N_lay);
 }

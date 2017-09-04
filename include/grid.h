@@ -17,6 +17,10 @@ struct Grid {
     const int n_lay = std::ceil(height / length);
     const int n_lvl = n_lay + 1;
 
+    int getlayindex(const double& z) const {
+        return std::floor(z / length);
+    }
+
     double getlvl(const int i) const {
         if (i < n_lvl && i >= 0) {
             return length * i;

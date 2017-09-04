@@ -9,6 +9,7 @@ include_directories(${NETCDF_INCLUDE_DIR})
 
 add_library(columnmodel 
             thermodynamic.cpp
+            tau_relax.cpp
             columnmodel.cpp)
 
         target_link_libraries(columnmodel ${YAML_CPP_LIBRARIES} ${FPDA_RRTM_LIBRARIES} ${NETCDF_LIBRARIES} netcdf_c++4)

@@ -15,7 +15,9 @@ int main(int argc, char** argv) {
         } else {
             config = YAML::Load(std::cin);
         }
-        auto columnmodel = createColumnModel(config["model"]);
+        std::random_device rd;
+        std::mt19937_64 gen(rd());
+        auto columnmodel = createColumnModel(gen, config["model"]);
         std::string file_name = "dummy.nc";
         // std::string file_name = time_stamp();
         std::shared_ptr<Logger> logger = createLogger(config["logger"]);
