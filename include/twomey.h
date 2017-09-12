@@ -1,5 +1,7 @@
 #pragma once
 #include <algorithm>
+#include <memory>
+#include <random>
 #include <cmath>
 #include "analize_state.h"
 #include "grid.h"

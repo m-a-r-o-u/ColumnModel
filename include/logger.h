@@ -70,19 +70,16 @@ class NetCDFLogger: public Logger {
     NetCDFLogger(std::string folder_name, std::string file_name="dummy.nc"): folder(folder_name), file(file_name) {
         mkdir(folder.c_str(), S_IRWXU);
         std::string fullname = folder+file;
-        int fcounter = 0;
 
-        bool fswitch = true;
-        while(fswitch){
+        fh = std::unique_ptr<netCDF::NcFile>(nullptr);
+        for (int fcounter = 0; !fh; ++fcounter){
             try{
                 std::ostringstream ss;
                 ss << std::setfill('0') << std::setw(3) << fcounter;
                 fh = std::make_unique<netCDF::NcFile>(fullname + '_' + ss.str() + ".nc", netCDF::NcFile::newFile);
-                fswitch=false;
             }
             catch(const netCDF::exceptions::NcException& e){
                 std::cout << "renaming file" << std::endl;
-                ++fcounter;
             }
         }
 

@@ -19,7 +19,6 @@ int main(int argc, char** argv) {
         std::mt19937_64 gen(rd());
         auto columnmodel = createColumnModel(gen, config["model"]);
         std::string file_name = "dummy.nc";
-        // std::string file_name = time_stamp();
         std::shared_ptr<Logger> logger = createLogger(config["logger"]);
         columnmodel.run(logger);
     } catch (YAML::Exception e) {
