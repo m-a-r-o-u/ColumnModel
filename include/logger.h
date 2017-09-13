@@ -101,6 +101,7 @@ class NetCDFLogger: public Logger {
         time_var = fh->addVar("time", netCDF::ncDouble, time_dim);
 
         qc_var = fh->addVar("qc", netCDF::ncDouble, {time_dim, layer_dim});
+        qv_var = fh->addVar("qv", netCDF::ncDouble, {time_dim, layer_dim});
         S_var = fh->addVar("S", netCDF::ncDouble, {time_dim, layer_dim});
         r_max_var = fh->addVar("r_max", netCDF::ncDouble, {time_dim, layer_dim});
         r_mean_var = fh->addVar("r_mean", netCDF::ncDouble, {time_dim, layer_dim});
@@ -133,9 +134,12 @@ class NetCDFLogger: public Logger {
         auto r_mean = calculate_mean_radius_profile(superparticles, state.grid);
         auto sp_count = count_superparticles(superparticles, state.grid);
         auto r_std = calculate_stddev_radius_profile(superparticles, state.grid);
+        std::vector<double> qv(member_iterator(const_cast<State&>(state).layers.begin(), &Layer::qv), 
+                               member_iterator(const_cast<State&>(state).layers.end(), &Layer::qv));
 
         time_var.putVar({i}, {1}, &state.t);
         qc_var.putVar({i,0}, {1, n_lay}, qc.data());
+        qv_var.putVar({i,0}, {1, n_lay}, qv.data());
         S_var.putVar({i,0}, {1, n_lay}, S.data());
         r_max_var.putVar({i,0}, {1, n_lay}, r_max.data());
         r_mean_var.putVar({i,0}, {1, n_lay}, r_mean.data());
@@ -156,6 +160,7 @@ class NetCDFLogger: public Logger {
     netCDF::NcDim time_dim;
     netCDF::NcVar time_var;
     netCDF::NcVar qc_var;
+    netCDF::NcVar qv_var;
     netCDF::NcVar S_var;
     netCDF::NcVar r_max_var;
     netCDF::NcVar r_mean_var;

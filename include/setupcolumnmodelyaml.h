@@ -16,9 +16,10 @@
 template <typename OIt, typename G>
 std::unique_ptr<SuperParticleSource<OIt>> createParticleSource(
     G& gen, const Grid& grid, const YAML::Node& config) {
+    std::string type = config["type"].as<std::string>();
     int N_sp = config["N_sp"].as<int>();
     int N_lay = grid.n_lay;
-    return mkTwomey<OIt>(gen, N_sp, N_lay);
+    return mkPS<OIt>(gen, N_sp, N_lay, type);
 }
 
 State createState(const Grid& grid, const YAML::Node& config) {

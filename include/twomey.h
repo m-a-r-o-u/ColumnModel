@@ -1,9 +1,9 @@
 #pragma once
 #include <algorithm>
-#include <memory>
-#include <random>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
+#include <random>
 #include "analize_state.h"
 #include "grid.h"
 #include "member_iterator.h"
@@ -48,7 +48,7 @@ int find_index(IT first, IT last, double value) {
 template <typename G>
 inline double place_vertically(G& gen, State& state, int index) {
     std::uniform_real_distribution<> dis(-1, 1);
-    double z = state.grid.getlay(index) +  state.grid.length / 2. * dis(gen);
+    double z = state.grid.getlay(index) + state.grid.length / 2. * dis(gen);
     if (!(z > state.grid.getlvl(index) && z < state.grid.getlvl(index + 1))) {
         std::exit(0);
     }
@@ -66,8 +66,8 @@ inline std::vector<int> index_profile(const std::vector<double>& S_prf,
 
 inline void feedback_qc(std::vector<Superparticle>& nuc_par, Layer& lay) {
     double qc_sum =
-        std::accumulate(member_iterator(nuc_par.begin(),&Superparticle::qc),
-                        member_iterator(nuc_par.end(),  &Superparticle::qc), 0);
+        std::accumulate(member_iterator(nuc_par.begin(), &Superparticle::qc),
+                        member_iterator(nuc_par.end(), &Superparticle::qc), 0);
     if (lay.qv > qc_sum) {
         lay.qv -= qc_sum;
     } else {
@@ -91,20 +91,19 @@ class Twomey : public SuperParticleSource<OIt> {
           N_sp(N_sp),
           N_pro_cmp(N_lay, 0),
           S_tab(N_sp, 0.),
-          gen(gen)
-    {
+          gen(gen) {
         S_tab = createNSTable_logistic(N_sp);
         std::transform(S_tab.begin(), S_tab.end(), S_tab.begin(),
-                       [](double x) { return std::max(x, 8.* 1.e-3);});
+                       [](double x) { return std::max(x, 8. * 1.e-3); });
     };
 
-    void init(Logger& logger){
+    void init(Logger& logger) {
         logger.setAttr("N_sp", N_sp);
         logger.setAttr("N_multi", N_multi);
     }
 
     void generateParticles(OIt sp_itr, State& state, double dt,
-                                  const std::vector<Superparticle>& sp) {
+                           const std::vector<Superparticle>& sp) {
         std::vector<double> S_state = supersaturation_profile(state);
         std::vector<int> n_nuc = count_nucleated(sp, state.grid);
         std::vector<int> N_pro = index_profile(S_state, S_tab);
@@ -158,7 +157,39 @@ class Twomey : public SuperParticleSource<OIt> {
 };
 
 template <typename OIt, typename G>
+class NoParticleSource : public SuperParticleSource<OIt> {
+   public:
+    NoParticleSource(G& gen, int N_sp, int N_lay)
+        : g(N_sp), N_multi(1.e8 / double(N_sp)), N_sp(N_sp), gen(gen){};
+
+    void init(Logger& logger) {
+        logger.setAttr("N_sp", N_sp);
+        logger.setAttr("N_multi", N_multi);
+    }
+
+    void generateParticles(OIt sp_itr, State& state, double dt,
+                           const std::vector<Superparticle>& sp) {}
+
+   private:
+    LogisticGenerator g;
+    const int N_multi;
+    const int N_sp;
+    G& gen;
+};
+
+template <typename OIt, typename G>
 std::unique_ptr<Twomey<OIt, G>> mkTwomey(G& gen, const int& N_sp,
-                                      const int& N_lay) {
+                                         const int& N_lay) {
     return std::make_unique<Twomey<OIt, G>>(gen, N_sp, N_lay);
+}
+
+template <typename OIt, typename G>
+std::unique_ptr<SuperParticleSource<OIt>> mkPS(G& gen, const int& N_sp,
+                                               const int& N_lay,
+                                               const std::string& type) {
+    if (type == "twomey") {
+        return std::make_unique<Twomey<OIt, G>>(gen, N_sp, N_lay);
+    } else {
+        return std::make_unique<NoParticleSource<OIt, G>>(gen, 0., N_lay);
+    }
 }
