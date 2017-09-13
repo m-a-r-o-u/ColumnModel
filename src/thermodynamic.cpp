@@ -3,7 +3,7 @@
 #include "layer_quantities.h"
 #include "level_quantities.h"
 
-double saturation(double T, double p, double qv) {
+double super_saturation(double T, double p, double qv) {
     return qv / saturation_vapor(T, p) - 1;
 }
 
@@ -28,11 +28,10 @@ double critical_saturation(double r_dry, double T) {
                      raoults_parameter(r_dry));
 }
 
-Tendencies condensation(double qc, double N, double r_dry, double S, double T,
+Tendencies condensation(double qc, double N, const double r_dry, double S, double T,
                         double E, double dt) {
     Tendencies tendencies{0, 0};
 
-    // double r_old = std::max(r_dry, radius(qc, N, r_dry));
     const double r_old = radius(qc, N, r_dry);
     double es = saturation_pressure(T);
     double r_new = condensation_solver(r_old, es, T, S, E, dt);
@@ -42,6 +41,9 @@ Tendencies condensation(double qc, double N, double r_dry, double S, double T,
     double dT = H_LAT / C_P * dqc;
 
     tendencies.dqc = dqc;
+    if (r_new == r_dry){
+        tendencies.dqc = qc;
+    }
     tendencies.dT = dT;
     return tendencies;
 }
@@ -51,7 +53,7 @@ double _radius(double qc, double N, double rho) {
 }
 
 double radius(double qc, double N, double r_min, double rho) {
-    return _radius(qc + cloud_water(N, r_min, 0, rho), N, rho);
+    return _radius(qc + cloud_water(N, r_min, 0., rho), N, rho);
 }
 
 double _cloud_water(double N, double r, double rho) {

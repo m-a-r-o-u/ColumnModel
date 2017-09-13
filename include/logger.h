@@ -16,6 +16,7 @@
 #include "analize_sp.h"
 #include "analize_state.h"
 #include "time_stamp.h"
+#include "member_iterator.h"
 
 class Logger {
    public:

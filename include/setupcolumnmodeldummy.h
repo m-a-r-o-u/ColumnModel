@@ -52,10 +52,10 @@ std::unique_ptr<Advect> createAdvectionSolver(const double& cloud_base, const do
 }
 
 ColumnModel createColumnModel() {
-    double t_max = 3 * 60;
+    double t_max = 30* 60;
     double dt = 0.1;
     double w = 1;
-    double gridlength = 100.;
+    double gridlength = 10.;
     double cloud_base = 1000;
     double toa = cloud_base + w * t_max + gridlength * 5;
     int N_sp = 1.e3;

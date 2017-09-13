@@ -1,14 +1,14 @@
 #pragma once
 #include <memory>
+#include "advect.h"
 #include "grid.h"
 #include "logger.h"
 #include "radiationsolver.h"
+#include "saturation_fluctuations.h"
 #include "state.h"
 #include "superparticle.h"
 #include "superparticle_source.h"
 #include "tendencies.h"
-#include "advect.h"
-#include "saturation_fluctuations.h"
 
 class ColumnModel {
    public:
@@ -18,8 +18,7 @@ class ColumnModel {
                 double dt, RadiationSolver radiation_solver,
                 std::unique_ptr<Grid> grid,
                 std::unique_ptr<Advect> advection_solver,
-                std::unique_ptr<FluctuationSolver> fluctuations
-            )
+                std::unique_ptr<FluctuationSolver> fluctuations)
         : source(source),
           state(initial_state),
           superparticles{},
@@ -28,8 +27,7 @@ class ColumnModel {
           radiation_solver(radiation_solver),
           grid(std::move(grid)),
           advection_solver(std::move(advection_solver)),
-          fluctuations(std::move(fluctuations))
-          {};
+          fluctuations(std::move(fluctuations)){};
     void run(std::shared_ptr<Logger> logger);
 
    private:
@@ -37,8 +35,7 @@ class ColumnModel {
     void step();
     bool is_running();
     void apply_tendencies_to_superparticle(Superparticle& superparticle,
-                                           Tendencies& tendencies,
-                                           const double w);
+                                           Tendencies& tendencies);
     void apply_tendencies_to_state(Superparticle& superparticle,
                                    const Tendencies& tendencies);
     void insert_superparticles();

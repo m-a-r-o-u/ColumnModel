@@ -3,6 +3,7 @@
 #include <memory>
 #include <random>
 #include <cmath>
+#include <cstdlib>
 #include "analize_state.h"
 #include "grid.h"
 #include "member_iterator.h"

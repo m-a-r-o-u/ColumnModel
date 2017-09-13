@@ -22,7 +22,7 @@ struct Grid {
     }
 
     double getlvl(const int i) const {
-        if (i < n_lvl && i >= 0) {
+        if (i <= n_lvl && i >= 0) {
             return length * i;
         } else {
             throw std::out_of_range(
@@ -31,7 +31,7 @@ struct Grid {
     }
 
     double getlay(const int i) const {
-        if (i < n_lay && i >= 0) {
+        if (i <= n_lay && i >= 0) {
             return length * (i + 0.5);
         } else {
             throw std::out_of_range(

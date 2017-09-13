@@ -4,6 +4,7 @@
 #include <iostream>
 #include "member_iterator.h"
 #include "state.h"
+#include "logger.h"
 
 class Advect {
    public:

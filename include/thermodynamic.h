@@ -7,7 +7,7 @@
 #include "level_quantities.h"
 #include "grid.h"
 
-double saturation(double T, double p, double qv);
+double super_saturation(double T, double p, double qv);
 
 double saturation_vapor(double T, double p);
 
@@ -23,7 +23,7 @@ double critical_saturation(double r_dry, double T);
  */
 bool will_nucleate(double r_dry, double S, double T);
 
-Tendencies condensation(double qc, double N, double r_dry, double S, double T,
+Tendencies condensation(double qc, double N, const double r_dry, double S, double T,
                         double E, double dt);
 
 double radius(double qc, double N, double r_min = 0., double rho = RHO_AIR);
