@@ -48,7 +48,7 @@ int find_index(IT first, IT last, double value) {
 template <typename G>
 inline double place_vertically(G& gen, State& state, int index) {
     std::uniform_real_distribution<> dis(-1, 1);
-    double z = state.grid.getlay(index) + dis(gen) * state.grid.length / 2.;
+    double z = state.grid.getlay(index) +  state.grid.length / 2. * dis(gen);
     if (!(z > state.grid.getlvl(index) && z < state.grid.getlvl(index + 1))) {
         std::exit(0);
     }
@@ -131,11 +131,14 @@ class Twomey : public SuperParticleSource<OIt> {
         if (n_nuc > 0) {
             res.reserve(n_nuc);
             for (int i = n_cmp; i < n_cmp + n_nuc; ++i) {
-                double S_i = S_tab[i];
-                double r_init = 8.e-10 / S_i;
                 double r_dry = 1.e-7;
+                //double r_init = 8.e-10 / S_tab[i]; // is what comes from Grab. but leads to errors
+                double r_init = r_dry;
                 int N = N_multi;
                 bool is_nucleated = true;
+                if (r_init < r_dry){
+                    std::cout << "\a" << std::endl;
+                    std::exit(0);}
                 double qc = cloud_water(N, r_init, r_dry, 1.);
                 double z = place_vertically(gen, state, index);
                 res.push_back({qc, z, r_dry, N, is_nucleated});
