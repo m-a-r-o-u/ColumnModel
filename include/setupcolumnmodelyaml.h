@@ -22,10 +22,20 @@ std::unique_ptr<SuperParticleSource<OIt>> createParticleSource(
     return mkPS<OIt>(gen, N_sp, N_lay, type);
 }
 
+void setQvProfile(double base, double roof, State& state) {
+    int b_index = std::floor(base / state.grid.length) - 1;
+    int r_index = std::floor(roof / state.grid.length) - 1;
+    for (int i = b_index; i <= r_index; ++i){
+        state.layers[i].qv =
+           saturation_vapor(state.layers[i].T, state.layers[i].p);
+    }
+}
+
 State createState(const Grid& grid, const YAML::Node& config) {
     double T0 = config["T0"].as<double>();
     double p0 = config["p0"].as<double>();
     double cloud_base = config["cloud_base"].as<double>();
+    double cloud_roof = config["cloud_roof"].as<double>();
     double w = config["w"].as<double>();
 
     State state{0, {}, {}, grid, cloud_base, w};
@@ -35,10 +45,7 @@ State createState(const Grid& grid, const YAML::Node& config) {
             {linear_temperature(el, T0), hydrostatic_pressure(el, p0), 0, 0});
     }
 
-    int index = std::floor(cloud_base / grid.length) - 1;
-    state.layers[index].qv =
-        saturation_vapor(state.layers[index].T, state.layers[index].p);
-
+    setQvProfile(cloud_base, cloud_roof, state);
     for (const auto& el : grid.getlvls()) {
         state.levels.push_back({w, hydrostatic_pressure(el, p0)});
     }
@@ -63,8 +70,8 @@ std::unique_ptr<Grid> createGrid(const YAML::Node& config) {
 }
 
 template <typename G>
-std::unique_ptr<FluctuationSolver> createFluctuationSolver( G& gen,
-    const Grid& grid, const YAML::Node& config) {
+std::unique_ptr<FluctuationSolver> createFluctuationSolver(
+    G& gen, const Grid& grid, const YAML::Node& config) {
     std::string type = config["type"].as<std::string>();
     double epsilon = config["epsilon"].as<double>();
     return mkFS(gen, type, epsilon, grid);
@@ -80,9 +87,10 @@ ColumnModel createColumnModel(G& gen, const YAML::Node& config) {
     auto advection_solver = createAdvectionSolver(config["advection"]);
     auto state = createState(*grid, config["initial_state"]);
     auto radiation_solver = createRadiationSolver(config["radiation"]);
-    auto source = createParticleSource<ColumnModel::OIt>( gen,
-        *grid, config["particle_source"]);
-    auto fluctuations = createFluctuationSolver(gen, *grid, config["fluctuations"]);
+    auto source = createParticleSource<ColumnModel::OIt>(
+        gen, *grid, config["particle_source"]);
+    auto fluctuations =
+        createFluctuationSolver(gen, *grid, config["fluctuations"]);
 
     return ColumnModel(state, std::move(source), t_max, dt, radiation_solver,
                        std::move(grid), std::move(advection_solver),
