@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -18,7 +19,11 @@ struct Grid {
     const int n_lvl = n_lay + 1;
 
     int getlayindex(const double& z) const {
-        return std::floor(z / length);
+        int index = std::floor( z / length);
+        if (index < 0 || index > n_lay){
+            std::cout << "index is out of bounds: " << index << std::endl;
+            std::exit(0);}
+        return index;
     }
 
     double getlvl(const int i) const {

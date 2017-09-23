@@ -35,8 +35,9 @@ class ColumnModel {
     void step();
     bool is_running();
     void apply_tendencies_to_superparticle(Superparticle& superparticle,
-                                           Tendencies& tendencies);
-    void apply_tendencies_to_state(Superparticle& superparticle,
+                                           Tendencies& tendencies,
+                                           const Level& lvl);
+    void apply_tendencies_to_state(const Superparticle& superparticle,
                                    const Tendencies& tendencies);
     void insert_superparticles();
     void nucleation(Superparticle& superparticle);

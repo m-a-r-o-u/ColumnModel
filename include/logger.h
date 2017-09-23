@@ -39,14 +39,13 @@ class StdoutLogger : public Logger {
         std::vector<double> qc_sum = calculate_qc_profile(superparticles, state.grid);
         std::vector<double> r_mean = calculate_mean_radius_profile(superparticles, state.grid);
         std::vector<double> r_max = calculate_maximal_radius_profile(superparticles, state.grid);
-        std::vector<double> sp_count = count_superparticles(superparticles, state.grid);
         std::vector<int> sp_count_nuc = count_nucleated(superparticles, state.grid);
         std::vector<double> S = supersaturation_profile(state);
 
         std::cout << std::endl;
         std::cout << "State at " << state.t << "\n";
         std::cout << "     layer         z         E         p         T       "
-                     " qv         S        qc    r_mean     r_max     N_tot     N_nuc\n";
+                     " qv         S        qc    r_mean     r_max     N_nuc\n";
         for (unsigned int i = 0; i < state.layers.size(); ++i) {
             std::cout << std::setprecision(3) << std::setw(10) << i;
             std::cout << std::setprecision(3) << std::setw(10) << state.grid.getlay(i);
@@ -58,7 +57,6 @@ class StdoutLogger : public Logger {
             std::cout << std::setprecision(3) << std::setw(10) << qc_sum[i];
             std::cout << std::setprecision(3) << std::setw(10) << r_mean[i];
             std::cout << std::setprecision(3) << std::setw(10) << r_max[i];
-            std::cout << std::setprecision(3) << std::setw(10) << sp_count[i];
             std::cout << std::setprecision(3) << std::setw(10) << sp_count_nuc[i];
             std::cout << "\n";
         }
@@ -132,7 +130,7 @@ class NetCDFLogger: public Logger {
         auto S = supersaturation_profile(state);
         auto r_max = calculate_maximal_radius_profile(superparticles, state.grid);
         auto r_mean = calculate_mean_radius_profile(superparticles, state.grid);
-        auto sp_count = count_superparticles(superparticles, state.grid);
+        auto sp_count = count_nucleated(superparticles, state.grid);
         auto r_std = calculate_stddev_radius_profile(superparticles, state.grid);
         std::vector<double> qv(member_iterator(const_cast<State&>(state).layers.begin(), &Layer::qv), 
                                member_iterator(const_cast<State&>(state).layers.end(), &Layer::qv));

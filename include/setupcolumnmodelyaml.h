@@ -27,7 +27,7 @@ void setQvProfile(double base, double roof, State& state) {
     int r_index = std::floor(roof / state.grid.length) - 1;
     for (int i = b_index; i <= r_index; ++i){
         state.layers[i].qv =
-           saturation_vapor(state.layers[i].T, state.layers[i].p);
+           saturation_vapor(state.layers[i].T, state.layers[i].p) + 0.0001;
     }
 }
 
@@ -41,8 +41,10 @@ State createState(const Grid& grid, const YAML::Node& config) {
     State state{0, {}, {}, grid, cloud_base, w};
 
     for (const auto& el : grid.getlays()) {
+        if(el>0){}
         state.layers.push_back(
-            {linear_temperature(el, T0), hydrostatic_pressure(el, p0), 0, 0});
+            //{linear_temperature(el, T0), hydrostatic_pressure(el, p0), 0, 0});
+            {T0, p0, 0, 0});
     }
 
     setQvProfile(cloud_base, cloud_roof, state);

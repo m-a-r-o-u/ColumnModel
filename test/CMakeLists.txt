@@ -42,6 +42,9 @@ add_executable(run_test
                test_analize_distribution.cpp
                test_saturation_fluctuations.cpp
                test_tau_relax.cpp
+               test_ns_table.cpp
+               test_numeric.cpp
+               test_twomey.cpp
                test_state.cpp)
 target_link_libraries(run_test 
                       gtest_main 

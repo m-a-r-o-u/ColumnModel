@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <vector>
 #include "grid.h"
 #include "superparticle.h"
@@ -13,29 +14,13 @@ inline void removeUnnucleated(std::vector<Superparticle>& superparticles) {
     superparticles.erase(fwd_it, superparticles.end());
 }
 
-inline std::vector<double> count_superparticles(
-    const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
-    std::vector<double> res(grid.n_lay, 0);
-
-    for (auto sp : superparticles) {
-        auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-
-        int index = std::distance(lvls.begin(), ubound) - 1;
-        res[index] += 1;
-    }
-    return res;
-}
-
 inline std::vector<int> count_nucleated(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<int> res(grid.n_lay, 0);
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             res[index] += 1;
         }
     }
@@ -44,13 +29,11 @@ inline std::vector<int> count_nucleated(
 
 inline std::vector<double> calculate_qc_profile(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<double> res(grid.n_lay, 0);
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             res[index] += sp.qc;
         }
     }
@@ -59,15 +42,13 @@ inline std::vector<double> calculate_qc_profile(
 
 inline std::vector<double> calculate_effective_radius_profile(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<double> r2(grid.n_lay, 0);
     std::vector<double> r3(grid.n_lay, 0);
     std::vector<double> res(grid.n_lay, 0);
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             r2[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 2);
             r3[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 3);
         }
@@ -82,13 +63,11 @@ inline std::vector<double> calculate_effective_radius_profile(
 
 inline std::vector<double> calculate_maximal_radius_profile(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<double> res(grid.n_lay, 0);
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             res[index] = std::max(radius(sp.qc, sp.N, sp.r_dry), res[index]);
         }
     }
@@ -97,13 +76,11 @@ inline std::vector<double> calculate_maximal_radius_profile(
 
 inline std::vector<double> calculate_minimal_radius_profile(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<double> res(grid.n_lay, 0);
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             res[index] = std::min(radius(sp.qc, sp.N, sp.r_dry), res[index]);
         }
     }
@@ -112,14 +89,12 @@ inline std::vector<double> calculate_minimal_radius_profile(
 
 inline std::vector<double> calculate_mean_radius_profile(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<double> count(grid.n_lay, 0);
     std::vector<double> res(grid.n_lay, 0);
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             count[index] += 1;
             res[index] += radius(sp.qc, sp.N, sp.r_dry);
         }
@@ -134,7 +109,6 @@ inline std::vector<double> calculate_mean_radius_profile(
 
 inline std::vector<double> calculate_stddev_radius_profile(
     const std::vector<Superparticle>& superparticles, const Grid& grid) {
-    std::vector<double> lvls = grid.getlvls();
     std::vector<double> count(grid.n_lay, 0);
     std::vector<double> r2(grid.n_lay, 0);
     std::vector<double> mean(grid.n_lay, 0);
@@ -142,8 +116,7 @@ inline std::vector<double> calculate_stddev_radius_profile(
 
     for (auto sp : superparticles) {
         if (sp.is_nucleated) {
-            auto ubound = std::upper_bound(lvls.begin(), lvls.end(), sp.z);
-            int index = std::distance(lvls.begin(), ubound) - 1;
+            int index =  grid.getlayindex(sp.z);
             count[index] += 1;
             r2[index] += std::pow(radius(sp.qc, sp.N, sp.r_dry), 2);
             mean[index] += radius(sp.qc, sp.N, sp.r_dry);

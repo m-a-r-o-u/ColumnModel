@@ -35,15 +35,14 @@ Tendencies condensation(double qc, double N, const double r_dry, double S, doubl
     const double r_old = radius(qc, N, r_dry);
     double es = saturation_pressure(T);
     double r_new = condensation_solver(r_old, es, T, S, E, dt);
-    r_new = std::max(r_new, r_dry);
 
-    double dqc = cloud_water(N, r_new, r_old);
-    double dT = H_LAT / C_P * dqc;
-
-    tendencies.dqc = dqc;
-    if (r_new == r_dry){
-        tendencies.dqc = qc;
+    if (r_new < r_dry){
+        tendencies.dqc = -qc;
+    }else{
+        double dqc = cloud_water(N, r_new, r_old);
+        tendencies.dqc = dqc;
     }
+    double dT = H_LAT / C_P * tendencies.dqc;
     tendencies.dT = dT;
     return tendencies;
 }
@@ -96,8 +95,8 @@ double fall_speed(const double r) {
     double k2 = 8e3;
     double k3 = 2.01e2;
 
-    if (r < 40.e-6) {
-        return k1 * std::pow(r, 2);
+    if (r < 40.e-6) { //40.e.6 is correct
+        return k1 * std::pow(r, 2) * 10;
     }
     if (r > 0.6e-3) {
         return k3 * std::sqrt(r);

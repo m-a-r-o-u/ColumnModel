@@ -12,7 +12,7 @@
 #include "saturation_fluctuations.h"
 
 void cooling_the_column(State& state, double dt){
-    std::vector<double> cooling(state.grid.n_lay, -.5e-2 * 1 * dt);
+    std::vector<double> cooling(state.grid.n_lay, - 2.3e-5 / dt);
     std::transform(member_iterator(state.layers.begin(), &Layer::T),
               member_iterator(state.layers.end(), &Layer::T),
               cooling.begin(),
@@ -47,9 +47,10 @@ void check_S(const State& s, const State& os){
     }
 }
 
-void check_superparticles(std::vector<Superparticle>& sp) {
+void check_superparticles(std::vector<Superparticle>& sp, const Grid& grid) {
     for (auto s : sp) {
         if (s.N > sp[0].N || s.N < sp[0].N) {
+            std::cout << "somethin with the multiplicity" << std::endl;
             std::exit(0);
         }
         if (s.qc < 0.) {
@@ -58,6 +59,13 @@ void check_superparticles(std::vector<Superparticle>& sp) {
             std::exit(0);
         }
     }
+//    std::vector<int>  nsp = count_nucleated(sp, grid);
+//    for (auto n: nsp){
+//        if (n > 100){
+//            std::cout << "the sp count is larger then 100 with: " << n << std::endl;
+//            //std::exit(0);
+//        }
+//    }
 }
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
@@ -69,21 +77,21 @@ void ColumnModel::run(std::shared_ptr<Logger> logger) {
     logger->log(state, superparticles);
     while (is_running()) {
         step();
-        log_every_seconds(logger, 60.);
+        log_every_seconds(logger, 30.);
     }
 }
 
 void ColumnModel::step() {
-    advection_solver->advect(state, dt);
     source->generateParticles(std::back_inserter(superparticles), state, dt,
-                              superparticles);
+                                  superparticles);
+    advection_solver->advect(state, dt);
     fluctuations->refresh(superparticles);
 
     State old_state(state);
 
     if (true) {
         check_state(state);
-        check_superparticles(superparticles);
+        check_superparticles(superparticles, state.grid);
     }
 
     for (auto& sp : superparticles) {
@@ -94,15 +102,14 @@ void ColumnModel::step() {
 
         if (sp.is_nucleated) {
             auto tendencies = calc_tendencies(sp, S, lay.T, lay.E, dt);
-            apply_tendencies_to_superparticle(sp, tendencies);
             apply_tendencies_to_state(sp, tendencies);
-            sp.z += lvl.w * dt - dt * fall_speed(radius(sp.qc, sp.N, sp.r_dry));
+            apply_tendencies_to_superparticle(sp, tendencies, lvl);
         }
     }
-
+    removeUnnucleated(superparticles);
     radiation_solver.calculate_radiation(state, superparticles);
 
-    removeUnnucleated(superparticles);
+    cooling_the_column(state, dt);
     if (true){
         check_S(state, old_state);
     }
@@ -115,14 +122,15 @@ void ColumnModel::log_every_seconds(std::shared_ptr<Logger> logger,
     }
 }
 
-
 void ColumnModel::apply_tendencies_to_superparticle(
-    Superparticle& sp, Tendencies& tendencies) {
+    Superparticle& sp, Tendencies& tendencies,
+    const Level& lvl) {
+    sp.z += lvl.w * dt - dt * 0.1;//fall_speed(radius(sp.qc, sp.N, sp.r_dry));
     sp.qc += tendencies.dqc;
     nucleation(sp);
 }
 
-void ColumnModel::apply_tendencies_to_state(Superparticle& superparticle,
+void ColumnModel::apply_tendencies_to_state(const Superparticle& superparticle,
                                             const Tendencies& tendencies) {
     state.change_layer(superparticle.z, state.grid, {0, 0, -tendencies.dqc, 0});
 }
@@ -136,10 +144,15 @@ Tendencies ColumnModel::calc_tendencies(const Superparticle& superparticle,
 }
 
 void ColumnModel::nucleation(Superparticle& s) {
-    auto r = radius(s.qc, s.N, s.r_dry);
-    if (std::abs((r - s.r_dry) / s.r_dry) < 1.e-5) {
+    if (s.qc <= 0) {
         s.is_nucleated = false;
     }
+    if (s.z <= 0){
+        s.is_nucleated = false;
+    }
+//    if (s.radius() >= 20.e-6){
+//        s.is_nucleated = false;
+//    }
 }
 
 bool ColumnModel::is_running() {
