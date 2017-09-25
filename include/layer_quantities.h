@@ -11,4 +11,11 @@ struct Layer{
         qv += l.qv;
         E += l.E;
     }
+
+    void operator+=(const Layer&& l){
+        T += l.T;
+        p += l.p;
+        qv += l.qv;
+        E += l.E;
+    }
 };

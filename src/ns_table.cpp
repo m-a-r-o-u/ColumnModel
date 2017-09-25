@@ -41,8 +41,5 @@ std::vector<double> nstable(int Nsp, int& Nmulti){
     Nmulti = std::floor(step);
     std::vector<double> nx = arange(step, maximum, step);
     auto out = calculate_stable(n, s, nx);
-    for (unsigned int i = 0; i < nx.size(); i++){
-        std::cout << out[i] << " " << nx[i] << std::endl;
-    }
     return out;
 }

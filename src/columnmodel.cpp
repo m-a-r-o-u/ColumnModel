@@ -59,13 +59,6 @@ void check_superparticles(std::vector<Superparticle>& sp, const Grid& grid) {
             std::exit(0);
         }
     }
-//    std::vector<int>  nsp = count_nucleated(sp, grid);
-//    for (auto n: nsp){
-//        if (n > 100){
-//            std::cout << "the sp count is larger then 100 with: " << n << std::endl;
-//            //std::exit(0);
-//        }
-//    }
 }
 
 void ColumnModel::run(std::shared_ptr<Logger> logger) {
@@ -130,9 +123,9 @@ void ColumnModel::apply_tendencies_to_superparticle(
     nucleation(sp);
 }
 
-void ColumnModel::apply_tendencies_to_state(const Superparticle& superparticle,
+void ColumnModel::apply_tendencies_to_state(const Superparticle& sp,
                                             const Tendencies& tendencies) {
-    state.change_layer(superparticle.z, state.grid, {0, 0, -tendencies.dqc, 0});
+    state.change_layer(sp.z, {0, 0, -tendencies.dqc, 0});
 }
 
 Tendencies ColumnModel::calc_tendencies(const Superparticle& superparticle,

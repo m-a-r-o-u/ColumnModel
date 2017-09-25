@@ -19,7 +19,7 @@ struct State {
         return layers[index];
     }
 
-    inline void change_layer(double z, Grid grid, const Layer& tendencies){
+    inline void change_layer(double z, const Layer&& tendencies){
         Layer& l = layer_at(z);
         l += tendencies;
     }

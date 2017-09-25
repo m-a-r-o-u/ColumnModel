@@ -20,12 +20,12 @@ bool will_nucleate(double r_dry, double S, double T) {
 double kelvins_parameter(double T) { return 2 * GAMMA / R_V / RHO_H2O / T; }
 
 double raoults_parameter(double r_dry) {
-    return 2 * std::pow(r_dry, 3) * RHO_S * M_MOL_H2O / RHO_H2O / M_MOL_S;
+    return 2 * r_dry*r_dry*r_dry * RHO_S * M_MOL_H2O / RHO_H2O / M_MOL_S;
 }
 
 double critical_saturation(double r_dry, double T) {
-    return std::sqrt(4. * std::pow(kelvins_parameter(T), 3) / 27. /
-                     raoults_parameter(r_dry));
+    double kp = kelvins_parameter(T);
+    return std::sqrt(4. * kp*kp*kp / 27. / raoults_parameter(r_dry));
 }
 
 Tendencies condensation(double qc, double N, const double r_dry, double S, double T,
@@ -33,8 +33,8 @@ Tendencies condensation(double qc, double N, const double r_dry, double S, doubl
     Tendencies tendencies{0, 0};
 
     const double r_old = radius(qc, N, r_dry);
-    double es = saturation_pressure(T);
-    double r_new = condensation_solver(r_old, es, T, S, E, dt);
+    const double es = saturation_pressure(T);
+    const double r_new = condensation_solver(r_old, es, T, S, E, dt);
 
     if (r_new < r_dry){
         tendencies.dqc = -qc;
@@ -56,7 +56,7 @@ double radius(double qc, double N, double r_min, double rho) {
 }
 
 double _cloud_water(double N, double r, double rho) {
-    return 4. / 3. * PI * std::pow(r, 3) * RHO_H2O / rho * N;
+    return 4. / 3. * PI * r*r*r * RHO_H2O / rho * N;
 }
 
 double cloud_water(double N, double r, double r_min, double rho) {
@@ -75,8 +75,8 @@ double condensation_solver(const double r_old, const double es, const double T,
 double diffusional_growth(const double r_old, const double es, const double T,
                           const double S, const double E, const double dt) {
     auto c1 =
-        std::pow(H_LAT, 2) / (R_V * K * std::pow(T, 2)) + R_V * T / (D * es);
-    auto c2 = H_LAT / (R_V * K * std::pow(T, 2));
+        H_LAT * H_LAT / (R_V * K * T*T) + R_V * T / (D * es);
+    auto c2 = H_LAT / (R_V * K * T*T);
     return (S / r_old + c2 * E) / (c1 * RHO_H2O);
 }
 
@@ -96,7 +96,7 @@ double fall_speed(const double r) {
     double k3 = 2.01e2;
 
     if (r < 40.e-6) { //40.e.6 is correct
-        return k1 * std::pow(r, 2) * 10;
+        return k1 * r*r * 10;
     }
     if (r > 0.6e-3) {
         return k3 * std::sqrt(r);
