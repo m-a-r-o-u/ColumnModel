@@ -46,6 +46,7 @@ add_executable(run_test
                test_numeric.cpp
                test_twomey.cpp
                test_collision.cpp
+               test_efficiencies.cpp
                test_member_iterator.cpp
                test_sedimentation.cpp
                #test_projection_iterator.cpp

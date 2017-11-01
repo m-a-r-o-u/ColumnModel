@@ -2,21 +2,24 @@
 #include "interpolate.h"
 #include "twomey_utils.h"
 
+#include <array>
+
 class Efficiencies {
    public:
     Efficiencies() {}
     double collision_efficiency(double R, double rR) const {
         unsigned int iR = R * 0.1;
-        if (iR >= sizeof(Rref_remap) / sizeof(unsigned int)) {
-            iR = sizeof(Rref_remap) / sizeof(unsigned int) - 1;
+        if (iR >= Rref_remap.size()) {
+            iR = Rref_remap.size() - 1;
         }
         iR = Rref_remap[iR];
-        // auto iR = left_index_min_zero_max_smallerlast(Rref, R);
-        unsigned int irR = (rR * 20) - 1;
+        int irR = (rR * 20) - 1;
         if (irR >= 19) {
             irR = 18;
         }
-        // auto irR = left_index_min_zero_max_smallerlast(rRref, rR);
+        if (irR < 0) {
+            irR = 0;
+        }
         return bi_linear_interpolate(
             rRref[irR], Rref[iR], efficiencies[iR][irR],
             efficiencies[iR + 1][irR], rRref[irR + 1], Rref[iR + 1],
@@ -24,18 +27,17 @@ class Efficiencies {
     }
 
    private:
-    unsigned char Rref_remap[31] = {
-        0, 0, 1, 2, 3, 4, 5, 6, 6, 6, 7, 7, 7, 7, 7, 8,
-        8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
+    std::array<unsigned char, 31> Rref_remap = {0, 0, 1, 2, 3, 4, 5, 6, 6, 6, 7,
+                                    7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9,
+                                    9, 9, 9, 9, 9, 9, 9, 9, 9};
     // std::vector<double> Rref;
     // std::vector<double> rRref;
     // std::vector<std::vector<double>> efficiencies;
 
-    double Rref[11] = {10, 20,  30,  40,  50, 60,
-                                        70, 100, 150, 200, 300};
-    double rRref[20] = {
-        0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
-        0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00};
+    double Rref[11] = {10, 20, 30, 40, 50, 60, 70, 100, 150, 200, 300};
+    double rRref[20] = {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35,
+                        0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70,
+                        0.75, 0.80, 0.85, 0.90, 0.95, 1.00};
     double efficiencies[11][20] = {
         {0.0001, 0.0001, 0.0001, 0.014, 0.017, 0.019, 0.022,
          0.027,  0.030,  0.033,  0.035, 0.037, 0.038, 0.038,

@@ -22,7 +22,7 @@ TEST(count_nucleated, not_all_are_nucleated) {
     Grid grid{3., 1.};
     std::vector<int> res = count_nucleated(v, grid);
 
-    EXPECT_TRUE(res == std::vector<int>({0, 1, 1}));
+    EXPECT_EQ(res, std::vector<int>({0, 2, 1}));
 }
 
 TEST(calculate_qc_profile, not_all_are_nucleated) {
@@ -32,7 +32,7 @@ TEST(calculate_qc_profile, not_all_are_nucleated) {
     Grid grid{3., 1.};
     std::vector<double> res = calculate_qc_profile(v, grid);
 
-    EXPECT_TRUE(res == std::vector<double>({0, 1.e-5, 1.e-5}));
+    EXPECT_EQ(res, std::vector<double>({0, 2.e-5, 1.e-5}));
 }
 
 TEST(calculate_effective_radius_profile, check_values) {
