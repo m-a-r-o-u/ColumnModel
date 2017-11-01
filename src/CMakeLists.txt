@@ -13,7 +13,7 @@ add_library(columnmodel
             ns_table.cpp
             columnmodel.cpp)
 
-        target_link_libraries(columnmodel ${YAML_CPP_LIBRARIES} ${FPDA_RRTM_LIBRARIES} ${NETCDF_LIBRARIES} netcdf_c++4)
+target_link_libraries(columnmodel ${YAML_CPP_LIBRARIES} ${FPDA_RRTM_LIBRARIES} ${NETCDF_LIBRARIES} netcdf_c++4)
 
 target_include_directories(columnmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
@@ -21,3 +21,8 @@ add_executable(column
                main.cpp
                )
 target_link_libraries(column columnmodel)
+
+add_executable(test_logger
+               main_write_large_data_to_netcdf.cpp
+               )
+target_link_libraries(test_logger columnmodel)

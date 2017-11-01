@@ -8,12 +8,11 @@
 #include <algorithm>
 #include "file_utils.h"
 #include "twomey_utils.h"
+#include "interpolate.h"
 
 void load_data(std::vector<double>& n, std::vector<double>& s);
 
 void set_n(std::vector<double>& n_out, const std::vector<double>& n, double N);
-
-double linear_interpolate(double x1, double y1, double x2, double y2, double x);
 
 std::vector<double> calculate_stable(const std::vector<double>& n, const std::vector<double>& s, const std::vector<double>& nx);
 

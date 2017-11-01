@@ -52,9 +52,9 @@ static inline void calculate_cloudproperties(
     std::reverse(reliq.begin(), reliq.end());
     std::reverse(cliqwp.begin(), cliqwp.end());
     double re_min = 2.5;
-    double re_max = 60.;
+    double re_max = 55.;
     std::replace_if(reliq.begin(), reliq.end(),
-                    [re_min](double a) { return (a > 0 && a < re_min); },
+                    [re_min](double a) { return (a >= 0 && a < re_min); },
                     re_min);
     std::replace_if(reliq.begin(), reliq.end(),
                     [re_max](double a) { return (a > re_max); }, re_max);

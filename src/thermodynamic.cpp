@@ -95,12 +95,16 @@ double fall_speed(const double r) {
     double k2 = 8e3;
     double k3 = 2.01e2;
 
-    if (r < 40.e-6) { //40.e.6 is correct
-        return k1 * r*r * 10;
+    double r1 = 40.e-6;
+    double r2 = 0.6e-3;
+
+    if (r < r1) {
+        return k1 * r*r;
     }
-    if (r > 0.6e-3) {
-        return k3 * std::sqrt(r);
-    } else {
+    else if ( r >= r1 && r < r2){
         return k2 * r;
+    }
+    else {
+        return k3 * std::sqrt(r);
     }
 }

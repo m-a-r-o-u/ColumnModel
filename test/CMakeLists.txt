@@ -45,6 +45,10 @@ add_executable(run_test
                test_ns_table.cpp
                test_numeric.cpp
                test_twomey.cpp
+               test_collision.cpp
+               test_member_iterator.cpp
+               test_sedimentation.cpp
+               #test_projection_iterator.cpp
                test_state.cpp)
 target_link_libraries(run_test 
                       gtest_main 

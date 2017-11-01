@@ -1,10 +1,13 @@
 #pragma once
+#include <cstdlib>
 #include <memory>
 #include "advect.h"
+#include "collision.h"
 #include "grid.h"
 #include "logger.h"
 #include "radiationsolver.h"
 #include "saturation_fluctuations.h"
+#include "sedimentation.h"
 #include "state.h"
 #include "superparticle.h"
 #include "superparticle_source.h"
@@ -18,7 +21,9 @@ class ColumnModel {
                 double dt, RadiationSolver radiation_solver,
                 std::unique_ptr<Grid> grid,
                 std::unique_ptr<Advect> advection_solver,
-                std::unique_ptr<FluctuationSolver> fluctuations)
+                std::unique_ptr<FluctuationSolver> fluctuations,
+                std::unique_ptr<Collisions> collisions,
+                std::unique_ptr<Sedimentation> sedimentation)
         : source(source),
           state(initial_state),
           superparticles{},
@@ -27,7 +32,9 @@ class ColumnModel {
           radiation_solver(radiation_solver),
           grid(std::move(grid)),
           advection_solver(std::move(advection_solver)),
-          fluctuations(std::move(fluctuations)){};
+          fluctuations(std::move(fluctuations)),
+          collisions(std::move(collisions)),
+          sedimentation(std::move(sedimentation)){};
     void run(std::shared_ptr<Logger> logger);
 
    private:
@@ -39,11 +46,16 @@ class ColumnModel {
                                            const Level& lvl);
     void apply_tendencies_to_state(const Superparticle& superparticle,
                                    const Tendencies& tendencies);
+    void apply_collision_tendencies(
+        std::vector<Superparticle>& sps,
+        const std::vector<SpMassTendencies>& tendencies);
     void insert_superparticles();
-    void nucleation(Superparticle& superparticle);
     Tendencies calc_tendencies(const Superparticle& superparticle,
                                const double S, const double T, const double E,
                                const double dt);
+
+    void do_condensation(State& old_state);
+    void do_collisions();
     std::shared_ptr<SuperParticleSource<OIt>> source;
     State state;
     std::vector<Superparticle> superparticles;
@@ -54,4 +66,6 @@ class ColumnModel {
     std::unique_ptr<Grid> grid;
     std::unique_ptr<Advect> advection_solver;
     std::unique_ptr<FluctuationSolver> fluctuations;
+    std::unique_ptr<Collisions> collisions;
+    std::unique_ptr<Sedimentation> sedimentation;
 };

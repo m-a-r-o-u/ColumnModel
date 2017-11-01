@@ -3,7 +3,6 @@
 #include <random>
 #include "superparticle.h"
 #include "constants.h"
-#include "grid.h"
 #include "tau_relax.h"
 
 inline double turbulent_kinetic_energy(const double& l, const double& epsilon) {
@@ -43,14 +42,14 @@ class FluctuationSolver {
 template <typename G>
 class MarkovFluctuationSolver : public FluctuationSolver {
    public:
-    MarkovFluctuationSolver(G& gen, const double& epsilon, const Grid& grid)
-        : epsilon(epsilon), grid(grid), gen(gen), tau_relax(grid) {}
+    MarkovFluctuationSolver(G& gen, const double& epsilon, double l, const Grid& grid)
+        : epsilon(epsilon), l(l), gen(gen), tau_relax(grid) {}
     void refresh(const std::vector<Superparticle>& sp) override;
     double getFluctuation(Superparticle& s, const double& dt) override;
 
    private:
     const double epsilon;
-    const Grid& grid;
+    const double l;
     G& gen;
     TauRelax tau_relax;
 };
@@ -64,8 +63,8 @@ void MarkovFluctuationSolver<G>::refresh(
 template <typename G>
 double MarkovFluctuationSolver<G>::getFluctuation(Superparticle& s,
                                                       const double& dt) {
-    double tke = turbulent_kinetic_energy(grid.length, epsilon);
-    double tau = integral_timescale(grid.length, tke);
+    double tke = turbulent_kinetic_energy(l, epsilon);
+    double tau = integral_timescale(l, tke);
     double w_std = w_standart(tke);
     s.w_prime = ornstein_uhlenbeck_process(gen, s.w_prime, dt, tau, w_std);
     double tau_r = tau_relax(s.z);
@@ -82,10 +81,9 @@ class NoFluctuationSolver : public FluctuationSolver {
 
 template <typename G>
 std::unique_ptr<FluctuationSolver> mkFS(G& gen, 
-        const std::string& type, const double& epsilon,
-                                               const Grid& grid) {
+        const std::string& type, const double& epsilon, double l, const Grid& grid) {
     if (type == "markov") {
-        return std::make_unique<MarkovFluctuationSolver<G>>(gen, epsilon, grid);
+        return std::make_unique<MarkovFluctuationSolver<G>>(gen, epsilon, l, grid);
     }
     else {
         return std::make_unique<NoFluctuationSolver>();

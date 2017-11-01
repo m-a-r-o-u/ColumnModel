@@ -46,7 +46,7 @@ TEST(saturation_fluctuations, test_saturation_fluctuations){
     std::vector<Superparticle> sp;
     sp.push_back({0.00001, 50, 1.e-6, 100000000, true});
 
-    auto fsolver = mkFS(gen, "markov", 50.e-4, grid);
+    auto fsolver = mkFS(gen, "markov", 50.e-4, 50, grid);
 
     double dt = 0.1;
     double tmax = 20.*60. * 10.;

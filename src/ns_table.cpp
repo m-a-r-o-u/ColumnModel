@@ -14,15 +14,6 @@ void load_data(std::vector<double>& n, std::vector<double>& s){
     }
 }
 
-double linear_interpolate(double x1, double y1, double x2, double y2, double x){
-    if (x1 > x2) {
-        std::cout << "linear interpolation: points may be in the wrong order: x1 "<<  x1 << " x2 " << x2 << std::endl;
-    }
-    double a = ( y2 - y1 ) / ( x2 - x1 );
-    double b = y2 - a * x2;
-    return a * x + b;
-}
-
 std::vector<double> calculate_stable(const std::vector<double>& n, const std::vector<double>& s, const std::vector<double>& nx){
     std::vector<double> out;
     for (unsigned int i = 0; i < nx.size(); ++i){

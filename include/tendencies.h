@@ -1,4 +1,5 @@
 #pragma once
+#include <ostream>
 
 struct Tendencies {
     double dqc;
@@ -10,3 +11,8 @@ struct Tendencies {
         return *this;
     }
 };
+
+inline std::ostream& operator<<(std::ostream& os, const Tendencies& rhs){
+    os << rhs.dqc << " " << rhs.dT;
+    return os;
+}

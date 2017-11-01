@@ -9,7 +9,7 @@ class MemberIterator {
     typedef Element value_type;
     typedef Element* pointer;
     typedef Element& reference;
-    typedef std::forward_iterator_tag iterator_category;
+    typedef typename std::iterator_traits<BaseIt>::iterator_category iterator_category;
     typedef typename std::iterator_traits<BaseIt>::value_type StructT;
 
     MemberIterator(BaseIt base_it, Element StructT::*member_ptr)
@@ -19,17 +19,68 @@ class MemberIterator {
         ++base_it;
         return *this;
     }
+    MemberIterator<BaseIt, Element> operator++(int) {
+        auto that = *this;
+        ++base_it;
+        return that;
+    }
+    MemberIterator<BaseIt, Element>& operator--() {
+        --base_it;
+        return *this;
+    }
+    MemberIterator<BaseIt, Element> operator--(int) {
+        auto that = *this;
+        --base_it;
+        return that;
+    }
     Element& operator*() { return (*base_it).*member_ptr; }
-    bool operator!=(const MemberIterator<BaseIt, Element>& other) {
+    Element* operator->() {
+        return &((*base_it).*member_ptr);
+    }
+    Element& operator[](difference_type n){
+        return base_it[n].*member_ptr;
+    }
+    bool operator<(const MemberIterator<BaseIt, Element>& other) const {
+        return base_it < other.base_it;
+    }
+    bool operator<=(const MemberIterator<BaseIt, Element>& other) const {
+        return base_it <= other.base_it;
+    }
+    bool operator>(const MemberIterator<BaseIt, Element>& other) const {
+        return base_it > other.base_it;
+    }
+    bool operator>=(const MemberIterator<BaseIt, Element>& other) const {
+        return base_it >= other.base_it;
+    }
+    bool operator!=(const MemberIterator<BaseIt, Element>& other) const {
         return base_it != other.base_it;
     }
-    int operator-(const MemberIterator<BaseIt, Element>& other) {
+    bool operator==(const MemberIterator<BaseIt, Element>& other) const {
+        return base_it == other.base_it;
+    }
+    MemberIterator<BaseIt, Element> operator+(difference_type n) const {
+        return {base_it + n, member_ptr};
+    }
+    MemberIterator<BaseIt, Element>& operator+=(difference_type n) {
+        base_it += n;
+        return *this;
+    }
+    MemberIterator<BaseIt, Element>& operator-=(difference_type n) {
+        base_it -= n;
+        return *this;
+    }
+    friend MemberIterator<BaseIt, Element> operator+(difference_type n, const MemberIterator<BaseIt, Element>& rhs) {
+        return rhs + n;
+    }
+    MemberIterator<BaseIt, Element> operator-(difference_type n) const {
+        return {base_it - n, member_ptr};
+    }
+    difference_type operator-(const MemberIterator<BaseIt, Element>& other) {
         return base_it - other.base_it;
     }
-
    private:
     BaseIt base_it;
-    Element StructT::*member_ptr;
+    Element StructT::* member_ptr;
 };
 
 template <typename BaseIt, typename Element>

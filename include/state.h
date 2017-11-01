@@ -13,6 +13,7 @@ struct State {
     const Grid& grid;
     double cloud_base;
     double w_init;
+    double qr_ground = 0;
 
     inline Layer& layer_at(double z) {
         int index = std::floor(z / grid.length);

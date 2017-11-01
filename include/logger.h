@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <numeric>
 #include "netcdfwrapper.h"
 #include <string>
 #include "state.h"
@@ -20,7 +21,7 @@
 
 class Logger {
    public:
-    virtual void initialize(const State& grid, const double& dt){} 
+    virtual void initialize(const State& state, const double& dt){} 
     virtual void setAttr(const std::string& key, bool val){}
     virtual void setAttr(const std::string& key, int val){}
     virtual void setAttr(const std::string& key, double val){}
@@ -98,13 +99,21 @@ class NetCDFLogger: public Logger {
         time_dim = fh->addDim("time");
         time_var = fh->addVar("time", netCDF::ncDouble, time_dim);
 
+        qr_var = fh->addVar("qr_ground", netCDF::ncDouble, time_dim);
         qc_var = fh->addVar("qc", netCDF::ncDouble, {time_dim, layer_dim});
         qv_var = fh->addVar("qv", netCDF::ncDouble, {time_dim, layer_dim});
         S_var = fh->addVar("S", netCDF::ncDouble, {time_dim, layer_dim});
         r_max_var = fh->addVar("r_max", netCDF::ncDouble, {time_dim, layer_dim});
         r_mean_var = fh->addVar("r_mean", netCDF::ncDouble, {time_dim, layer_dim});
-        sp_count_var = fh->addVar("sp_count", netCDF::ncDouble, {time_dim, layer_dim});
+        ccn_count_var = fh->addVar("ccn_count", netCDF::ncDouble, {time_dim, layer_dim});
+        ccn_count_falling_var = fh->addVar("ccn_count_falling", netCDF::ncDouble, {time_dim, layer_dim});
         r_std_var = fh->addVar("r_std", netCDF::ncDouble, {time_dim, layer_dim});
+        T_var = fh->addVar("T", netCDF::ncDouble, {time_dim, layer_dim});
+        p_var = fh->addVar("p", netCDF::ncDouble, {layer_dim});
+
+        std::vector<double> p(member_iterator(const_cast<State&>(state).layers.begin(), &Layer::p), 
+                               member_iterator(const_cast<State&>(state).layers.end(), &Layer::p));
+        p_var.putVar({0}, {n_lay}, p.data());
         i = 0;
     } 
 
@@ -130,40 +139,55 @@ class NetCDFLogger: public Logger {
         auto S = supersaturation_profile(state);
         auto r_max = calculate_maximal_radius_profile(superparticles, state.grid);
         auto r_mean = calculate_mean_radius_profile(superparticles, state.grid);
-        auto sp_count = count_nucleated(superparticles, state.grid);
+        auto ccn_count = count_nucleated_ccn(superparticles, state.grid);
+        auto ccn_count_falling = count_falling_ccn(superparticles, state.grid);
         auto r_std = calculate_stddev_radius_profile(superparticles, state.grid);
         std::vector<double> qv(member_iterator(const_cast<State&>(state).layers.begin(), &Layer::qv), 
                                member_iterator(const_cast<State&>(state).layers.end(), &Layer::qv));
+        std::vector<double> T(member_iterator(const_cast<State&>(state).layers.begin(), &Layer::T), 
+                               member_iterator(const_cast<State&>(state).layers.end(), &Layer::T));
 
         time_var.putVar({i}, {1}, &state.t);
+        qr_var.putVar({i}, {1}, &state.qr_ground);
         qc_var.putVar({i,0}, {1, n_lay}, qc.data());
         qv_var.putVar({i,0}, {1, n_lay}, qv.data());
         S_var.putVar({i,0}, {1, n_lay}, S.data());
         r_max_var.putVar({i,0}, {1, n_lay}, r_max.data());
         r_mean_var.putVar({i,0}, {1, n_lay}, r_mean.data());
-        sp_count_var.putVar({i,0}, {1, n_lay}, sp_count.data());
+        ccn_count_var.putVar({i,0}, {1, n_lay}, ccn_count.data());
+        ccn_count_falling_var.putVar({i,0}, {1, n_lay}, ccn_count_falling.data());
         r_std_var.putVar({i,0}, {1, n_lay}, r_std.data());
+        //T_var.putVar({i,0}, {1, n_lay}, T.data());
 
-
-        std::cout << "time [min]: " << std::floor(state.t/60.) << std::endl;
+        fh->sync();
+        std::cout << "log at [min]: " << state.t/60. << std::endl;
+        double sum=0;
+        for (const auto& q: qc){
+            sum += q;
+        }
+        std::cout << "qc sum: " << sum << std::endl;
+        std::cout << "sp size: " << superparticles.size() << std::endl;
         ++i;
     }
 
     ~NetCDFLogger(){
-        //flush();
+        //if(fh){fh->close();}
     }
-
 
     private:
     netCDF::NcDim time_dim;
     netCDF::NcVar time_var;
+    netCDF::NcVar qr_var;
     netCDF::NcVar qc_var;
     netCDF::NcVar qv_var;
     netCDF::NcVar S_var;
     netCDF::NcVar r_max_var;
     netCDF::NcVar r_mean_var;
-    netCDF::NcVar sp_count_var;
+    netCDF::NcVar ccn_count_var;
+    netCDF::NcVar ccn_count_falling_var;
     netCDF::NcVar r_std_var;
+    netCDF::NcVar T_var;
+    netCDF::NcVar p_var;
     size_t i;
     size_t n_lay;
     std::string folder;

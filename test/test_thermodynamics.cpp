@@ -143,3 +143,279 @@ TEST(radius_function, check_if_qc_is_zero) {
     double r_min = 1.e-6;
     EXPECT_TRUE(std::abs(radius(qc, N, r_min) - r_min) < EPSILON);
 }
+
+TEST(first_order_upwind, test_updraft){
+    std::vector<double> q{0,1,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+
+    first_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 1);
+}
+TEST(first_order_upwind, test_updraftfromground){
+    std::vector<double> q{1,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+
+    first_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 1);
+    EXPECT_EQ(q[1], 1);
+    EXPECT_EQ(q[2], 0);
+}
+TEST(first_order_upwind, test_updraftfromend){
+    std::vector<double> q{0,0,1};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+
+    first_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+}
+TEST(first_order_upwind, test_dndraft_top){
+    std::vector<double> q{0,0,1};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+
+    first_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 1);
+    EXPECT_EQ(q[2], 1);
+}
+TEST(first_order_upwind, test_dndraft_middle){
+    std::vector<double> q{0,1,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+
+    first_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 1);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+}
+TEST(first_order_upwind, test_dndraft_ground){
+    std::vector<double> q{1,0,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+
+    first_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+}
+TEST(second_order_upwind, test_updraft_empty){
+    std::vector<double> q{0,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+}
+TEST(second_order_upwind, test_updraft_ground){
+    std::vector<double> q{1,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], 1);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], -1/2.);
+}
+TEST(second_order_upwind, test_updraft_1lo){
+    std::vector<double> q{0,1,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 1);
+    EXPECT_EQ(q[2], 2.);
+}
+
+TEST(second_order_upwind, test_updraft_cur){
+    std::vector<double> q{0,0,1};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], -.5);
+}
+TEST(second_order_upwind, test_dndraft_2lo){
+    std::vector<double> q{0,0,1};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], -.5);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 1);
+}
+TEST(second_order_upwind, test_dndraft_1lo){
+    std::vector<double> q{0,1,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], 2.);
+    EXPECT_EQ(q[1], 1);
+    EXPECT_EQ(q[2], 0);
+}
+
+TEST(second_order_upwind, test_dndraft_cur){
+    std::vector<double> q{1,0,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    second_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], -1./2.);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+}
+
+TEST(third_order_upwind, test_updraft_empty){
+    std::vector<double> q{0,0,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+    EXPECT_EQ(q[3], 0);
+}
+TEST(third_order_upwind, test_updraft_2lo){
+    std::vector<double> q{1,0,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 1);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], -1./6.);
+    EXPECT_EQ(q[3], 0);
+}
+TEST(third_order_upwind, test_updraft_1lo){
+    std::vector<double> q{0,1,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 1);
+    EXPECT_EQ(q[2], 1);
+    EXPECT_EQ(q[3], 0);
+}
+TEST(third_order_upwind, test_updraft_hi){
+    std::vector<double> q{0,0,0,1};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], -1/3.);
+    EXPECT_EQ(q[3], 1);
+}
+TEST(third_order_upwind, test_dndraft_empty){
+    std::vector<double> q{0,0,0,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+    EXPECT_EQ(q[3], 0);
+}
+TEST(third_order_upwind, test_dndraft_2lo){
+    std::vector<double> q{0,0,0,1};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], -1/6.);
+    EXPECT_EQ(q[2], 0);
+    EXPECT_EQ(q[3], 1);
+}
+TEST(third_order_upwind, test_dndraft_1lo){
+    std::vector<double> q{0,0,1,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 1);
+    EXPECT_EQ(q[2], 1);
+    EXPECT_EQ(q[3], 0);
+}
+TEST(third_order_upwind, test_dndraft_hi){
+    std::vector<double> q{1,0,0,0};
+    std::vector<double> w{-1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 1);
+    EXPECT_EQ(q[1], -1/3.);
+    EXPECT_EQ(q[2], 0);
+    EXPECT_EQ(q[3], 0);
+}
+
+TEST(sixth_order_wickerskamarock, test_updraft_empty){
+    std::vector<double> q{0,0,0,0,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    third_order_upwind(q.begin(), q.end(), w.begin(), dl, dt);
+    EXPECT_EQ(q[0], 0);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+    EXPECT_EQ(q[3], 0);
+}
+
+TEST(sixth_order_wickerskamarock, test_updraft_ground){
+    std::vector<double> q{1,0,0,0,0,0};
+    std::vector<double> w{1};
+    double dl = 1;
+    double dt = 1;
+    sixth_order_wickerskamarock(q.begin(), q.end(), w.begin(), dl, dt);
+    for ( auto qi: q){
+        std::cout << qi << std::endl;
+    }
+    EXPECT_EQ(q[0], 1);
+    EXPECT_EQ(q[1], 0);
+    EXPECT_EQ(q[2], 0);
+    EXPECT_EQ(q[3], -1/60.);
+    EXPECT_EQ(q[4], 0);
+    EXPECT_EQ(q[5], 0);
+}

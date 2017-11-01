@@ -19,18 +19,14 @@ double place_vertically_random(G& gen, State& state, int index) {
     std::uniform_real_distribution<> dis(-1, 1);
     double z = state.grid.getlay(index) + state.grid.length / 2. * dis(gen);
     if (!(z > state.grid.getlvl(index) && z < state.grid.getlvl(index + 1))) {
-        std::cout << "particles are randomly placed in the wrong layer" << std::endl;
-        std::exit(0);
+        throw std::out_of_range("particle with height " + std::to_string(z) + 
+                                " is placed in the wrong layer by the placer_vertically_random routine");
     }
     return z;
 }
 
 inline double place_vertically_center(State& state, int index) {
     double z = state.grid.getlay(index);
-    if (!(z > state.grid.getlvl(index) && z < state.grid.getlvl(index + 1))) {
-        std::cout << "particles are randomly placed in the wrong layer" << std::endl;
-        std::exit(0);
-    }
     return z;
 }
 inline void feedback_qc(std::vector<Superparticle>& nuc_par, Layer& lay) {
@@ -70,9 +66,10 @@ class Twomey : public SuperParticleSource<OIt> {
 
     void generateParticles(OIt sp_itr, State& state, double dt,
                            const std::vector<Superparticle>& sp) {
-        std::vector<int> nucprf = count_nucleated(sp, state.grid);
+        std::vector<int> nucprf = count_nucleated_ccn(sp, state.grid);
         std::vector<double> Sprf = supersaturation_profile(state);
         std::vector<int> nprf = indexes(Stab, Sprf);
+        std::transform(nprf.begin(), nprf.end(), nprf.begin(), [this](int x){return x * this->N_multi;});
 
         for (auto itr = nprf.begin(); itr != nprf.end(); ++itr) {
             auto index = std::distance(nprf.begin(), itr);
@@ -85,27 +82,26 @@ class Twomey : public SuperParticleSource<OIt> {
    private:
     std::vector<Superparticle> n_particle(int n, int n_cmp, State& state,
                                           int index) {
-        int n_nuc = n - n_cmp;
+        int n_nuc = std::floor((n - n_cmp) / N_multi);
         if(n_nuc > N_sp){
-            std::cout << "newly nucleated particles are larger then N_sp: " << n_nuc << std::endl;
-            std::exit(0);
+        throw std::out_of_range("more particles will nucleate then the maximal amount: " + std::to_string(n_nuc) + 
+                                "compare with (max) N_sp" + std::to_string(N_sp));
         }
         std::vector<Superparticle> res;
         if (n_nuc > 0) {
             res.reserve(n_nuc);
             for (int i = 0; i < n_nuc; ++i) {
-                double r_dry = 8.e-10 / Stab[Stab.size()-1];
                 double r_crit = 1.e-7;
+                double r_dry = std::min(r_crit, 8.e-10 / Stab[Stab.size()-1]);
                 double r_init = std::min(r_crit, 8.e-10 / Stab[i]);
                 int N = N_multi;
-                bool is_nucleated = true;
                 double qc = cloud_water(N, r_init, r_dry, 1.);
                 double z = place_vertically_random(gen, state, index);
                 if (r_init < r_dry) {
-                    std::cout << "r_init < r_dry" << std::endl;
-                    std::exit(0);
+                    throw std::logic_error("the inital radius r_init: " + std::to_string(r_init) + 
+                                           "is larger then r_dry: " + std::to_string(r_dry));
                 }
-                res.push_back({qc, z, r_dry, N, is_nucleated});
+                res.push_back({qc, z, r_dry, N});
             }
             return res;
         } else {
@@ -144,15 +140,4 @@ template <typename OIt, typename G>
 std::unique_ptr<Twomey<OIt, G>> mkTwomey(G& gen, const int& N_sp,
                                          const int& N_lay) {
     return std::make_unique<Twomey<OIt, G>>(gen, N_sp, N_lay);
-}
-
-template <typename OIt, typename G>
-std::unique_ptr<SuperParticleSource<OIt>> mkPS(G& gen, const int& N_sp,
-                                               const int& N_lay,
-                                               const std::string& type) {
-    if (type == "twomey") {
-        return std::make_unique<Twomey<OIt, G>>(gen, N_sp, N_lay);
-    } else {
-        return std::make_unique<NoParticleSource<OIt, G>>(gen, 0., N_lay);
-    }
 }
