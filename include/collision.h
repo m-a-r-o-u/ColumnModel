@@ -14,9 +14,10 @@
 #include "superparticle.h"
 #include "thermodynamic.h"
 
+template <typename E>
 class HallCollisionKernal {
    public:
-    HallCollisionKernal(Efficiencies efficiencies)
+    HallCollisionKernal(E efficiencies)
         : efficiencies(efficiencies) {}
     double operator()(double r, double R, double dfs) const {
         if (R <= 0.) {
@@ -28,18 +29,13 @@ class HallCollisionKernal {
     }
 
    private:
-    Efficiencies efficiencies;
+    E efficiencies;
 };
 
 struct SpMassTendencies {
     double dqc;
-    int dN;
+    double dN;
 };
-
-inline std::ostream& operator<<(std::ostream& os, const SpMassTendencies& t) {
-    os << t.dqc << " " << t.dN;
-    return os;
-}
 
 class Collisions {
    public:
@@ -78,78 +74,72 @@ class BoxCollisions {
        public:
         Collider(SpIt first, SpIt last, TIt out, double dt,
                  const BoxCollisions& params)
-            : sps(first), out(out), dt(dt), params(params) {
+            : out(out), dt(dt), params(params) {
             pc = std::distance(first, last);
             assert(pc >= 2);
-            ridx.reserve(pc);
+            csps.reserve(pc);
             for (auto it = first; it != last; ++it) {
-                ridx.emplace_back(it->radius(), std::distance(first, it));
+                double r = it->radius();
+                csps.push_back({r, size_t(std::distance(first, it)), double(it->N),
+                                  params.sedimentation.fall_speed(r), it->qc});
             }
-            std::sort(ridx.begin(), ridx.end());
-            fall_speeds.reserve(pc);
-            std::transform(ridx.begin(), ridx.end(), fall_speeds.begin(),
-                           [&](const auto& ri) {
-                               return params.sedimentation.fall_speed(ri.first);
-                           });
+            std::sort(csps.begin(), csps.end());
         }
 
         void calculate() {
             size_t isp;
-            for (size_t i = 0; i < pc - 1; ++i) {
-                isp = ridx[i].second;
+            for (size_t i = 0; i < pc; ++i) {
+                isp = csps[i].i;
                 out[isp].dN = weights(i);
-                out[isp].dqc = 4. / 3. * PI * RHO_H2O *
-                                   (sps[isp].N + out[isp].dN) * mass(i) /
-                                   (1 - out[isp].dN / sps[isp].N) -
-                               sps[isp].qc;
+                out[isp].dqc = 4. / 3. * PI * RHO_H2O * csps[i].N * mass(i);
             }
-            isp = ridx[pc - 1].second;
-            out[isp].dqc = mass(pc - 1);
         }
 
        private:
-        int weights(size_t i) {
-            auto r = ridx[i].first;
-            auto isp = ridx[i].second;
+        double weights(size_t i) {
+            auto r = csps[i].r;
             double internal_collisions = -params.collision_kernal(r, r, 0) *
-                                         0.5 * sps[isp].N * (sps[isp].N - 1);
+                                         0.5 * csps[i].N * (csps[i].N - 1);
             double external_collisions = 0;
             for (auto j = i + 1; j < pc; ++j) {
-                auto R = ridx[j].first;
-                auto iSP = ridx[j].second;
+                auto R = csps[j].r;
                 external_collisions -=
                     params.collision_kernal(r, R,
-                                            fall_speeds[i] - fall_speeds[j]) *
-                    sps[isp].N * sps[iSP].N;
+                                            csps[i].fs - csps[j].fs) *
+                    csps[i].N * csps[j].N;
             }
-            return std::floor(dt * (internal_collisions + external_collisions));
+            return dt * (internal_collisions + external_collisions);
         }
 
         double mass(size_t i) {
-            auto ri = ridx[i].first;
-            // auto isp = ridx[i].second;
+            auto ri = csps[i].r;
             double from_smaller = 0;
             for (size_t j = 0; j < i; ++j) {
-                auto rj = ridx[j].first;
-                auto jsp = ridx[j].second;
+                auto rj = csps[j].r;
                 from_smaller += params.collision_kernal(
-                                    ri, rj, fall_speeds[i] - fall_speeds[j]) *
-                                sps[jsp].N * rj * rj * rj;
+                                    rj, ri, csps[i].fs - csps[j].fs) *
+                                csps[j].N * rj * rj * rj;
             }
             double from_larger = 0;
             for (size_t j = i + 1; j < pc; ++j) {
-                auto rj = ridx[j].first;
-                auto jsp = ridx[j].second;
+                auto rj = csps[j].r;
                 from_larger -= params.collision_kernal(
-                                   ri, rj, fall_speeds[i] - fall_speeds[j]) *
-                               sps[jsp].N * ri * ri * ri;
+                                   ri, rj, csps[i].fs - csps[j].fs) *
+                               csps[j].N * ri * ri * ri;
             }
-            return dt * (ri * ri * ri + from_smaller + from_larger);
+            return dt * (from_smaller + from_larger);
         }
 
-        std::vector<std::pair<double, size_t>> ridx;
-        std::vector<double> fall_speeds;
-        SpIt sps;
+        struct CollideSp {
+            double r;
+            size_t i;
+            double N;
+            double fs;
+            double qc;
+            bool operator<(const CollideSp& other) const { return r < other.r; }
+        };
+
+        std::vector<CollideSp> csps;
         TIt out;
         double dt;
         size_t pc;
@@ -201,10 +191,10 @@ class NoCollisions : public Collisions {
 };
 
 inline std::unique_ptr<Collisions> mkHCS(const Sedimentation& sedi) {
-    BoxCollisions<HallCollisionKernal> bc(sedi,
-                                          HallCollisionKernal(Efficiencies()));
+    BoxCollisions<HallCollisionKernal<Efficiencies>> bc(sedi,
+                                          HallCollisionKernal<Efficiencies>({}));
     return std::make_unique<
-        BoxCollisionAdapter<BoxCollisions<HallCollisionKernal>>>(bc);
+        BoxCollisionAdapter<BoxCollisions<HallCollisionKernal<Efficiencies>>>>(bc);
 }
 
 inline std::unique_ptr<Collisions> mkNCS() {

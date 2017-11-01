@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <memory>
 #include <random>
+#include <cassert>
 #include "analize_state.h"
 #include "grid.h"
 #include "member_iterator.h"
@@ -96,6 +97,8 @@ class Twomey : public SuperParticleSource<OIt> {
                 double r_init = std::min(r_crit, 8.e-10 / Stab[i]);
                 int N = N_multi;
                 double qc = cloud_water(N, r_init, r_dry, 1.);
+                if(qc<=0){qc = 1e-10;}
+                assert(qc>0);
                 double z = place_vertically_random(gen, state, index);
                 if (r_init < r_dry) {
                     throw std::logic_error("the inital radius r_init: " + std::to_string(r_init) + 

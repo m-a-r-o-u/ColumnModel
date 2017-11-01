@@ -27,23 +27,24 @@ class Superparticle {
     inline double radius() const { return _radius; }
     void update() {
         _radius = ::radius(qc, N, r_dry, 1.);
-        nucleation();
+        is_nucleated = nucleation();
     }
 
    private:
     double _radius = 0;
-    void nucleation() {
-        if (qc < 0) {
-            is_nucleated = false;
+    bool nucleation() {
+        if (qc <= 0) {
+            return false;
         }
-        if (z < 0) {
+        if (z <= 0) {
             std::cout << "particle reached the ground, r:" << radius()
                       << std::endl;
-            is_nucleated = false;
+            return false;
         }
-        if (N < 0) {
-            is_nucleated = false;
+        if (N <= 0) {
+            return false;
         }
+        return true;
     }
 };
 

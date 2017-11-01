@@ -4,6 +4,11 @@
 
 #include <array>
 
+class UnitEfficiencies {
+   public:
+    double collision_efficiency(double R, double rR) const { return 1; }
+};
+
 class Efficiencies {
    public:
     Efficiencies() {}
@@ -28,8 +33,8 @@ class Efficiencies {
 
    private:
     std::array<unsigned char, 31> Rref_remap = {0, 0, 1, 2, 3, 4, 5, 6, 6, 6, 7,
-                                    7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9,
-                                    9, 9, 9, 9, 9, 9, 9, 9, 9};
+                                                7, 7, 7, 7, 8, 8, 8, 8, 8, 9, 9,
+                                                9, 9, 9, 9, 9, 9, 9, 9, 9};
     // std::vector<double> Rref;
     // std::vector<double> rRref;
     // std::vector<std::vector<double>> efficiencies;
