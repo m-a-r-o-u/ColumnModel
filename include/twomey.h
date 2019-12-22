@@ -96,7 +96,7 @@ class Twomey : public SuperParticleSource<OIt> {
                 double r_dry = std::min(r_crit, 8.e-10 / Stab[Stab.size()-1]);
                 double r_init = std::min(r_crit, 8.e-10 / Stab[i]);
                 int N = N_multi;
-                double qc = std::max(1.e-10, cloud_water(N, r_init, r_dry, 1.));
+                double qc = std::max(std::nextafter(0., 1.), cloud_water(N, r_init, r_dry, 1.));
                 assert(qc>0);
                 double z = place_vertically_random(gen, state, index);
                 if (r_init < r_dry) {
