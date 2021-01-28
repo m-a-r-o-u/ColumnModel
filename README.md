@@ -1,11 +1,13 @@
 # The Atmospheric Column Model
 
-This research model was intendet to investigate the role of radiation on diffusional growth
-and from there to the evolution of clouds.
+This research model is intendet to investigate the role of radiation on diffusional growth.
+Futhermore it served to evaluate the evolution of clouds.
 
 ## Usage
 
-This may serve as a starting point, to get things running you need to go into the source code.
+The following list of parameters may serve as a starting point, to get things running.
+This work is preliminary and imcomplete, if you intend on building upon this work,
+you have to dig into the source code.
 Create a input file config.yaml:
 
 ```
